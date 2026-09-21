@@ -28,6 +28,19 @@ repository.
   (IP2Location BIN, MaxMind GeoLite2, a card-BIN database) go in `./config/intel/` if you have
   them; everything degrades gracefully if a given file is absent.
 
+## Authenticate to the image registry (one-time)
+
+The `wowyrd-app`/`wowyrd-dashboard` images are **private** — `docker compose up` will fail with
+`unauthorized` until you log in once. Your WoWyrd engineering contact will issue you a GitHub
+Personal Access Token scoped to `read:packages` on request; then:
+
+```bash
+echo "$WOWYRD_PAT" | docker login ghcr.io -u <your-github-username> --password-stdin
+```
+
+This is a one-time step per machine — Docker caches the credential, so subsequent `docker compose
+pull`/`up` calls (including version upgrades) don't need it repeated.
+
 ## Quick start
 
 ```bash
