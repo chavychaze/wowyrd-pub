@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat /Users/vitaliysobol/projects/startup/WoWyrd-bussiness/docs/strategy/SCORECARD.md | sed -n '/## Cross-Repo Coordination Log/,/## Closed Week/p'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
