@@ -1,0 +1,94 @@
+## WoWyrd — embedded lite profile (ADR-0009 in the source repo)
+##
+## For a client install that can't (or doesn't want to) provision a standalone Postgres/Redis
+## service: collapses the stack to wowyrd-app + wowyrd-dashboard only. No separate DB/cache
+## container, no port to open for either. STORAGE_BACKEND=sqlite is real and verified (not a
+## placeholder) — confirmed via a live run the night this was written.
+##
+## This file is self-contained (unlike the source repo's own docker-compose.lite.yml, which
+## layers on top of a separate docker-compose.dev.yml for the network_mode reset) — this repo
+## has no such dev overlay, so the host->bridge network override lives directly here instead.
+##
+## Quick start:
+##   cp .env.example .env
+##   # edit .env: WOWYRD_VERSION, API_KEYS
+##   # POSTGRES_PASSWORD: still set it to ANY placeholder value (e.g. "unused-in-lite-mode"),
+##   # even though this profile never actually connects to Postgres. Confirmed the hard way:
+##   # Compose interpolates every file's ${VAR:?...} placeholders BEFORE applying this
+##   # overlay's own service removal, so the base file's postgres service still demands the
+##   # var exist even though it never starts. Not a bug to work around — document and move on.
+##   docker compose -f docker-compose.yml -f docker-compose.lite.yml up -d wowyrd-app wowyrd-dashboard
+##
+## Verify no Postgres/Redis container exists under this profile before trusting it:
+##   docker compose -f docker-compose.yml -f docker-compose.lite.yml config --services
+##   docker ps   # expect exactly wowyrd-app + wowyrd-dashboard, nothing named postgres/redis
+
+services:
+  # Removed entirely from the merged config, not just left unstarted — `docker compose config`/
+  # `up` validates every service's required env vars (like POSTGRES_PASSWORD) even for a service
+  # nothing asks to start. Confirmed the hard way: without this, a client following this file's
+  # own quick-start (skip POSTGRES_PASSWORD, this profile doesn't need it) hits "required
+  # variable POSTGRES_PASSWORD is missing a value" immediately, from a service they're not even
+  # running. `!reset null` actually removes the key rather than merging an empty override into it.
+  postgres: !reset null
+  redis: !reset null
+
+  wowyrd-app:
+    # Reset away from the base file's privileged, host-networked, eBPF-oriented config — this
+    # profile has no eBPF enforcement layer and no reason to need host networking or elevated
+    # capabilities at all.
+    network_mode: !reset null
+    privileged: !override false
+    cap_add: !override []
+    ports:
+      - "${WOWYRD_APP_PORT:-8090}:8090"
+    # No service to wait on in this profile — the base file's postgres/redis `depends_on`
+    # would otherwise still auto-start both containers even though nothing here needs them.
+    depends_on: !override {}
+    # `!override` on the WHOLE list, not just appended new entries — Compose merges a list-form
+    # `environment:` by concatenation, not by key, so appending `POSTGRES_DSN=` after the base
+    # file's own `POSTGRES_DSN=postgres://...${POSTGRES_PASSWORD:?...}` entry does NOT replace
+    # it; both end up in the merged config and the base's required-var syntax still errors at
+    # interpolation time. Confirmed the hard way via `docker compose config`, not assumed.
+    # Restating the full list here (not just the sqlite-specific lines) is what actually works.
+    environment: !override
+      - STORAGE_BACKEND=sqlite
+      - SQLITE_PATH=/var/lib/wowyrd/wowyrd-lite.db
+      - POSTGRES_DSN=
+      - REDIS_ADDR=
+      - HTTP_ADDR=0.0.0.0:8090
+      - IP2LOCATION_DB=/etc/wowyrd/ip2location.BIN
+      - GEOIP_ASN_DB=/etc/wowyrd/GeoLite2-ASN.mmdb
+      - GEOIP_COUNTRY_DB=/etc/wowyrd/GeoLite2-Country.mmdb
+      - BIN_DB_PATH=/etc/wowyrd/bin-database.csv
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - API_KEYS=${API_KEYS:?set API_KEYS in .env}
+      - ENFORCEMENT_MODE=${ENFORCEMENT_MODE:-observe}
+      - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - RETENTION_HASH_KEY=${RETENTION_HASH_KEY:-}
+      - RETENTION_ANONYMIZE_AFTER_DAYS=${RETENTION_ANONYMIZE_AFTER_DAYS:-180}
+      - LICENSE_FILE=${LICENSE_FILE:-/etc/wowyrd/license.json}
+      - INTEL_BUNDLE_URL=${INTEL_BUNDLE_URL:-}
+    # Same list-concatenation issue as `environment:` above — `!override` needed here too, or
+    # the base file's `/sys/fs/bpf` bind mount (irrelevant without eBPF/privileged mode) stays
+    # in the merged config alongside this. Confirmed via the same `docker compose config` check.
+    volumes: !override
+      - ./config/intel:/etc/wowyrd:ro
+      - app_logs:/var/log/wowyrd
+      - wowyrd_lite_data:/var/lib/wowyrd
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  wowyrd-dashboard:
+    environment:
+      - VITE_API_URL=http://${HOST_IP:-localhost}:${WOWYRD_APP_PORT:-8090}
+      - VITE_WS_URL=ws://${HOST_IP:-localhost}:${WOWYRD_APP_PORT:-8090}/v1/ws/events
+      - VITE_API_KEY=${API_KEYS:?set API_KEYS in .env}
+
+volumes:
+  wowyrd_lite_data:
