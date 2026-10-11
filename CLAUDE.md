@@ -13,6 +13,11 @@ leads, consulting conversations, staffing, email/outreach history) across the wh
 infra — this repo, `../WoWyrd/`, and `../WoWyrd-bussiness/` itself. See that repo's `CLAUDE.md` for
 the full statement.
 
+**Log back, don't just build forward**: there's no automatic sync between repos/sessions. When
+something here is worth another session knowing, add a row to `../WoWyrd-bussiness/docs/strategy/
+SCORECARD.md`'s "Cross-Repo Coordination Log" yourself, or `SendMessage` the WoWyrd-bussiness
+session directly if one's live — don't assume it'll be picked up from a pasted transcript later.
+
 ## Guardrails still apply here
 
 `README.md` is public-facing text — any claim in it is subject to
