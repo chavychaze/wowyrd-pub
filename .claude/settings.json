@@ -11,6 +11,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/vitaliysobol/projects/startup/wowyrd-pub/.claude/hooks/claude-audit-guard.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

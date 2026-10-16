@@ -1,2 +1,5 @@
 .DS_Store
 .env
+
+# local Claude Code tool-call audit trail (claude-audit-guard.sh hook) — operational log, never commit
+.claude-audit.jsonl

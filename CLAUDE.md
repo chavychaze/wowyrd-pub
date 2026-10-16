@@ -30,3 +30,14 @@ client-facing surface that guardrail exists to protect.
 
 No `latest` tag — real releases are pinned explicitly. See `README.md`'s "Versions" section before
 changing anything related to `WOWYRD_VERSION`.
+
+## Hooks
+
+One commit-time `PreToolUse(Bash)` hook, added 2026-10-12, wired identically across all five
+repos in this family (WoWyrd, `wowyrd-wiki`, `WoWyrd-bussiness`, this repo, `ai-assistant`):
+`claude-audit-guard.sh` — appends one JSON line per matched `Bash` call to a local, gitignored
+`.claude-audit.jsonl`; separately blocks a short list of hard-to-reverse git operations
+(force-push, push to `main`/`master`, `--no-verify` commit, `reset --hard`,
+`rebase`/`filter-branch`) specifically when the session's own permission mode is auto/bypass —
+never in a normal human-reviewed session, never for ordinary edits/commits. Fails open on
+internal error. `AUDIT_GUARD_SKIP=1`. Since 2026-10-15 the push rule is fail-closed: in auto/bypass mode a `git push` is allowed only to an explicit, non-`main`/`master` branch with no force flag (bare `git push` is blocked too), and `AUDIT_GUARD_SKIP=1` counts only as a real leading prefix on the git command. Run `bash .claude/hooks/test-claude-audit-guard.sh` after any edit; keep all five copies byte-identical.
