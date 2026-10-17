@@ -92,8 +92,6 @@ feedback is what keeps this runbook honest.
 
 ---
 
-**Status note (2026-10-16): the <30-minute non-expert install timing described in this repo's own
-`specs/product-kernel/product-packaging-and-install-pilot-tier.md` has not yet been run for real.**
-This runbook is written to be followed by someone who did not help write it, but an actual timed
-run on a clean VM, by someone else, is still outstanding — treat any pass/fail claim about timing
-as unverified until that happens.
+**Status note (2026-10-16): the under-30-minute install by someone who didn't write this runbook
+has not been timed for real yet.** An actual timed run on a clean VM, by someone else, is still
+outstanding — treat any timing claim as unverified until it has.
