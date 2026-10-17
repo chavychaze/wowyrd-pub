@@ -3,3 +3,6 @@
 
 # local Claude Code tool-call audit trail (claude-audit-guard.sh hook) — operational log, never commit
 .claude-audit.jsonl
+
+# Python bytecode from running the hook scanner/tests
+__pycache__/
