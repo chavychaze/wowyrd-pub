@@ -73,6 +73,12 @@ pull will fail with "manifest unknown."
 observe-first by design: review the evidence it produces before enabling any autonomous
 enforcement, and only change this setting deliberately, after that review.
 
+## Pilot install (no separate database to provision)
+
+For a design-partner pilot evaluation — embedded SQLite backend, shadow-mode only, nothing
+privileged/eBPF-related — see [`INSTALL.md`](INSTALL.md), which also covers verifying image
+signatures (`cosign verify`) before you pull.
+
 ## Support
 
 This is a guided technical PoC, not a self-serve SaaS product — reach out to your WoWyrd
