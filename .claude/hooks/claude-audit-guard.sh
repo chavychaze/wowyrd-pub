@@ -21,7 +21,8 @@
 # turns the deny into permissionDecision "ask", so a human confirms that exact command in the UI.
 # A sub-agent dispatched to write a spec read the old block message ("...prefix the command with
 # AUDIT_GUARD_SKIP=1"), then pushed to main on its own. An escape hatch an agent can type alone
-# isn't a human approval. The block message no longer names the variable at all.
+# isn't a human approval. Since the skip now only earns a prompt, the deny message names it
+# again (2026-10-17 later): without it an agent whose user had said yes had no way to ask.
 
 set -uo pipefail
 
@@ -224,8 +225,10 @@ esac
 
 REASON="Blocked: this session's permission mode is auto/bypass (no human reviewing each
 prompt), and the command is $REASON_DETAIL, a hard-to-reverse operation once it leaves this
-machine. Do not retry it or look for a way around this guard. Stop and ask the user whether
-they want exactly this command run; only the user can approve it."
+machine. Do not retry it as-is or look for a way around this guard. Ask the user whether they
+want exactly this command run. Only if they say yes, re-run it with AUDIT_GUARD_SKIP=1 as a
+leading prefix: that bypasses nothing, it shows the user a confirmation prompt for this exact
+command, and only their approval in that prompt lets it run."
 
 jq -n --arg reason "$REASON" '{
   hookSpecificOutput: {
