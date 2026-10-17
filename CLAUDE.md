@@ -26,10 +26,12 @@ copy or a pitch deck. Being a different (and much smaller) repo isn't a reason t
 `wowyrd-guardrail-checker` skill before changing wording here — it's exactly the kind of
 client-facing surface that guardrail exists to protect.
 
-The skill is installed locally at `.claude/skills/wowyrd-guardrail-checker/` (added 2026-10-17,
-byte-identical to `../ai-assistant`'s absolute-path copy, sha1 `5990233`). Parent-directory skills
-are not invocable by name, so before that date this rule could not actually be followed here.
-`WoWyrd-bussiness` keeps the canonical, relative-path copy; when it changes, re-sync both.
+The skill is installed locally at `.claude/skills/wowyrd-guardrail-checker/` (added 2026-10-17).
+Parent-directory skills are not invocable by name, so before that date this rule could not
+actually be followed here. The canonical copy is `../WoWyrd-bussiness/.claude/skills/
+wowyrd-guardrail-checker/SKILL.md`; this file is a byte-identical copy (sha1 `5e12e9d` as of
+2026-10-17, sibling-relative paths that resolve from this repo root). When the canonical copy
+changes, recopy it; never edit this one in place.
 
 **Factual-drift checks specific to this repo** (each one went wrong in `INSTALL.md` on
 2026-10-17). Run these too, alongside the skill's word-list and lead-order checks:
@@ -59,7 +61,9 @@ internal error. Since 2026-10-15 the push rule is fail-closed: in auto/bypass mo
 The guard only sees Claude's own `Bash` tool calls. A command the user runs with the `!` prefix
 does not fire `PreToolUse` hooks: the founder's two `! git push origin main` runs on 2026-10-17 are
 absent from `.claude-audit.jsonl`. So the audit trail is a record of agent actions, not of
-every push from this machine.
+every push from this machine. That is intended (decided 2026-10-17, master session): a `!` command
+is a human action by definition, which is exactly what the guard exists to require. No git
+`pre-push` hook is added to log those.
 
 Second `PreToolUse(Bash)` hook, this repo only (added 2026-10-17):
 `public-docs-guardrail-check.sh` (+ `public-docs-guardrail-scan.py`). On any `git commit` it scans
