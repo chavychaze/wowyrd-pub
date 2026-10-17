@@ -100,8 +100,27 @@ run 0 "default: git reset --hard allowed"         "$(payload default 'git reset 
 run 0 "default: --no-verify commit allowed"       "$(payload default 'git commit -m x --no-verify')"
 run 0 "default: git rebase allowed"               "$(payload default 'git rebase main')"
 
-echo "== escape hatch =="
-run 0 "bypass: force-push with AUDIT_GUARD_SKIP=1" "$(payload bypassPermissions 'AUDIT_GUARD_SKIP=1 git push --force origin main')"
+echo "== escape hatch: AUDIT_GUARD_SKIP=1 earns a human prompt (ask), never a silent allow =="
+run_ask() {  # run_ask <label> <json>: exit 0 AND stdout carries permissionDecision "ask"
+  local label="$1" json="$2" out got
+  out="$(printf '%s' "$json" | bash "$GUARD" 2>/dev/null)"; got=$?
+  if [ "$got" = 0 ] && printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "ask"' >/dev/null 2>&1; then
+    printf 'ok    %-55s ask\n' "$label"
+  else
+    printf 'FAIL  %-55s exit %s, not ask\n' "$label" "$got"; printf '        stdout: %s\n' "$out"; fail=1
+  fi
+}
+run_ask "bypass: force-push with skip -> ask"      "$(payload bypassPermissions 'AUDIT_GUARD_SKIP=1 git push --force origin main')"
+run_ask "auto: push main with skip -> ask"         "$(payload auto 'AUDIT_GUARD_SKIP=1 git push origin main 2>&1')"
+run_ask "auto: skip inside bash -c -> ask"         "$(payload auto "bash -c 'AUDIT_GUARD_SKIP=1 git push origin main'")"
+run_ask "auto: unparseable with skip -> ask"       "$(payload auto "AUDIT_GUARD_SKIP=1 git push origin main 'oops")"
+run 2 "auto: skip on one segment, not the other"   "$(payload auto 'AUDIT_GUARD_SKIP=1 git push origin main && git reset --hard HEAD~1')"
+run 0 "auto: skip on harmless command is a no-op"  "$(payload auto 'AUDIT_GUARD_SKIP=1 git status')"
+if printf '%s' "$(payload auto 'git push origin main')" | bash "$GUARD" 2>/dev/null | grep -q AUDIT_GUARD_SKIP; then
+  echo "FAIL  deny message must not advertise the bypass variable"; fail=1
+else
+  echo "ok    deny message does not advertise the bypass variable"
+fi
 
 echo "== fails open =="
 run 0 "empty stdin"                               ""

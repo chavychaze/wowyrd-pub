@@ -17,7 +17,11 @@
 #
 # Fails OPEN on any internal error (missing jq, unreadable input, not a git repo) — a broken
 # guard must never block a tool call. Escape hatch for a genuine, deliberate exception:
-# AUDIT_GUARD_SKIP=1 prefixed on the command.
+# AUDIT_GUARD_SKIP=1 prefixed on the command. Since 2026-10-17 it does NOT allow the command: it
+# turns the deny into permissionDecision "ask", so a human confirms that exact command in the UI.
+# A sub-agent dispatched to write a spec read the old block message ("...prefix the command with
+# AUDIT_GUARD_SKIP=1"), then pushed to main on its own. An escape hatch an agent can type alone
+# isn't a human approval. The block message no longer names the variable at all.
 
 set -uo pipefail
 
@@ -156,45 +160,72 @@ def classify_git(args):
     return ""
 
 
-def classify(cmd, depth=0):
+def classify(cmd, depth=0, skip_inherited=False):
+    """Return (detail, skipped): the first risky op not covered by AUDIT_GUARD_SKIP=1 wins
+    (deny); if every risky op carried the skip, return the first one with skipped=True (ask)."""
+    skipped_detail = ""
     for seg in segments(cmd):
-        skip = False
+        skip = skip_inherited
         while seg and (seg[0] in PREFIX_WORDS or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", seg[0])):
             if seg[0] == "AUDIT_GUARD_SKIP=1":
                 skip = True
             seg = seg[1:]
-        if not seg or skip:
+        if not seg:
             continue
         prog = os.path.basename(seg[0])
+        found = ""
         if prog in SHELLS and depth < 3 and "-c" in seg[1:-1]:
-            found = classify(seg[seg.index("-c") + 1], depth + 1)
-            if found:
-                return found
+            inner, inner_skipped = classify(seg[seg.index("-c") + 1], depth + 1, skip)
+            if inner and not inner_skipped:
+                return inner, False
+            if inner:
+                skipped_detail = skipped_detail or inner
         if prog == "git":
             found = classify_git(seg[1:])
-            if found:
-                return found
-    return ""
+        if found and not skip:
+            return found, False
+        if found:
+            skipped_detail = skipped_detail or found
+    return skipped_detail, bool(skipped_detail)
 
 
 cmd = os.environ.get("GUARD_CMD", "")
 try:
-    print(classify(cmd))
+    detail, skipped = classify(cmd)
+    if detail:
+        print(("ASK:" if skipped else "") + detail)
 except ValueError:
     # Unparseable (e.g. unbalanced quotes): fail closed on the obvious shapes rather than open.
+    # A skip token here cannot be attributed to a segment, so it only earns a human prompt.
+    # (No apostrophes anywhere in this heredoc: macOS bash 3.2 mis-parses them inside $(...).)
     if re.search(r"\bgit\b", cmd) and re.search(
             r"\b(push|rebase|filter-branch|filter-repo)\b|--hard|--no-verify", cmd):
-        if "AUDIT_GUARD_SKIP=1" not in cmd:
-            print("an unparseable command containing a hard-to-reverse git operation")
+        prefix = "ASK:" if "AUDIT_GUARD_SKIP=1" in cmd else ""
+        print(prefix + "an unparseable command containing a hard-to-reverse git operation")
 PY
 )"
 
 [ -z "$REASON_DETAIL" ] && exit 0
 
+case "$REASON_DETAIL" in
+  ASK:*)
+    REASON="Human approval required: this session's permission mode is auto/bypass and the
+command is ${REASON_DETAIL#ASK:}, a hard-to-reverse operation once it leaves this machine.
+Approve only if you asked for exactly this command."
+    jq -n --arg reason "$REASON" '{
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "ask",
+        permissionDecisionReason: $reason
+      }
+    }'
+    exit 0 ;;
+esac
+
 REASON="Blocked: this session's permission mode is auto/bypass (no human reviewing each
-prompt), and the command is $REASON_DETAIL — a hard-to-reverse operation once it leaves this
-machine. Re-run it in a normal (human-reviewed) session, or if this is a genuine, deliberate
-exception, prefix the command with AUDIT_GUARD_SKIP=1."
+prompt), and the command is $REASON_DETAIL, a hard-to-reverse operation once it leaves this
+machine. Do not retry it or look for a way around this guard. Stop and ask the user whether
+they want exactly this command run; only the user can approve it."
 
 jq -n --arg reason "$REASON" '{
   hookSpecificOutput: {
