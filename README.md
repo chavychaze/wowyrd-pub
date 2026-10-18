@@ -63,8 +63,8 @@ Explicit versioning only — there is no `latest` tag. Check this repository's R
 the current version, then pin `WOWYRD_VERSION` in `.env` to it and change it deliberately, not
 automatically, when you're ready to upgrade.
 
-**Drop the leading `v`.** A release is tagged `v0.2.0` on the Releases page, but the actual Docker
-image tag is `0.2.0` (no `v`) — set `WOWYRD_VERSION=0.2.0`, not `WOWYRD_VERSION=v0.2.0`, or the
+**Drop the leading `v`.** A release is tagged `v0.3.4` on the Releases page, but the actual Docker
+image tag is `0.3.4` (no `v`) — set `WOWYRD_VERSION=0.3.4`, not `WOWYRD_VERSION=v0.3.4`, or the
 pull will fail with "manifest unknown."
 
 ## Safety defaults
