@@ -75,3 +75,20 @@ compliance claims, exact latency numbers, or a link into a private `chavychaze` 
 allow. It covers the mechanical half only; lead order and factual drift still need the skill and
 the checklist above. Fails open. Run `bash .claude/hooks/test-public-docs-guardrail-check.sh`
 after any edit.
+
+## How to explain things to the founder (WoWyrd family rule, since 2026-10-18)
+
+Founder decision, after Karpathy's note on reading LLM output. Same rule in every WoWyrd repo.
+- **Writing: "80% ASD-STE100" (Simplified Technical English).** One idea per sentence. Short
+  sentences (≤20 words in steps, ≤25 in prose). Active voice. Use one word for one meaning, and
+  don't use a synonym for variety. Give steps as numbered lists. For Ukrainian, use the same rules.
+  STE is for English only, but its principles carry over.
+- **Diagram first** when the answer is a flow, an architecture, a decision or a timeline: a Mermaid
+  diagram in markdown, or SVG/PNG for decks. Text explains the diagram, not the other way round.
+- **HTML page** (an Artifact, private by default) for big explainers, comparisons and anything
+  interactive (a strategy map, a benchmark walk-through). The source stays in the repo as markdown.
+  The page is a disposable view of it.
+- **Explainer video: not now.** Revisit after the first design partner. It needs a TTS key or a
+  local TTS and costs time.
+- This changes **how** we explain, not **what** we claim. The guardrail and the no-invented-numbers
+  rules still apply.
