@@ -6,14 +6,17 @@ your infrastructure rather than leaving it to be scored. First deliverable is an
 report, not a block — shadow-mode / champion-challenger validation, with controlled
 enforcement only after evidence review.
 
+WoWyrd is available now: install it in your environment today and run a pilot on your own
+data.
+
 This repository contains **compiled images only** — no source code. It's the quick-start
 distribution surface for a WoWyrd install; the engineering source lives in a private
 repository.
 
 ## What's here
 
-- `docker-compose.yml` — a minimal PoC stack: `wowyrd-app` (the risk engine), `wowyrd-dashboard`
-  (the evidence/review UI), PostgreSQL, and Redis. No `build:` step — every image is pulled
+- `docker-compose.yml` — the minimal install stack: `wowyrd-app` (the risk engine),
+  `wowyrd-dashboard` (the evidence/review UI), PostgreSQL, and Redis. No `build:` step — every image is pulled
   pre-compiled from `ghcr.io/chavychaze`.
 - `.env.example` — copy to `.env` and fill in before starting.
 
@@ -22,7 +25,7 @@ repository.
 - Docker + Docker Compose.
 - Linux (kernel 5.15+) if you want optional eBPF-based enforcement later. On macOS, or on an
   older kernel, WoWyrd runs in PostgreSQL-only mode automatically — this is a fully supported
-  mode for a first observe-only PoC, not a degraded fallback to work around.
+  mode for a first observe-only pilot, not a degraded fallback to work around.
 - Threat-intel enrichment (Tor/VPN/datacenter/disposable-email/IP reputation) is fetched
   in-process on a schedule — no extra setup needed. Optional local intelligence files
   (IP2Location BIN, MaxMind GeoLite2, a card-BIN database) go in `./config/intel/` if you have
@@ -75,11 +78,11 @@ enforcement, and only change this setting deliberately, after that review.
 
 ## Pilot install (no separate database to provision)
 
-For a design-partner pilot evaluation — embedded SQLite backend, shadow-mode only, nothing
+For a pilot on your own data — embedded SQLite backend, shadow-mode only, nothing
 privileged/eBPF-related — see [`INSTALL.md`](INSTALL.md), which also covers verifying image
 signatures (`cosign verify`) before you pull.
 
 ## Support
 
-This is a guided technical PoC, not a self-serve SaaS product — reach out to your WoWyrd
+This is a guided technical pilot, not a self-serve SaaS product — reach out to your WoWyrd
 engineering contact for onboarding, configuration help, or to report an issue.

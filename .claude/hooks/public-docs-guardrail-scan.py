@@ -34,7 +34,9 @@ def avoid_terms(positioning_doc):
     section = text.split("## Avoid these words", 1)[1].split("\n## ", 1)[0]
     terms = []
     for item in section.replace("\n", " ").split("·"):
+        item = re.sub(r"\*\*[^*]*:\*\*", "", item)  # a bold label such as "**Since <date>:**"
         item = re.sub(r"\([^)]*\)", "", item)
+        item = item.split(" — ")[0]  # a rationale after an em dash is prose, not a term
         item = item.split(" or any ")[0]
         item = re.sub(r"\bas the headline\b", "", item)
         for part in item.split(" / "):
@@ -70,8 +72,15 @@ def added_lines(repo):
     return [(p, l) for p, l in pairs if PUBLIC_DOC.search(p) and not NOT_PUBLIC.search(p)]
 
 
+def term_pattern(term):
+    """Case-insensitive literal match, bounded at word edges so "PoC" does not match "epoch"."""
+    start = r"\b" if re.match(r"\w", term) else ""
+    end = r"\b" if re.search(r"\w$", term) else ""
+    return re.compile(start + re.escape(term) + end, re.I)
+
+
 def scan(lines, terms):
-    patterns = [(t, re.compile(re.escape(t), re.I)) for t in terms] + EXTRA_PATTERNS
+    patterns = [(t, term_pattern(t)) for t in terms] + EXTRA_PATTERNS
     findings = []
     for path, line in lines:
         for label, pattern in patterns:

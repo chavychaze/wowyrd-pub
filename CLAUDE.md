@@ -26,6 +26,11 @@ copy or a pitch deck. Being a different (and much smaller) repo isn't a reason t
 `wowyrd-guardrail-checker` skill before changing wording here — it's exactly the kind of
 client-facing surface that guardrail exists to protect.
 
+**Tone (founder direction, 2026-10-22)**: WoWyrd is a built, tested product available to install
+today. Public text never says "PoC", "proof of concept" or "prototype". Use "pilot on your own
+data" and "install it in your environment today". "production-ready" stays banned. The current
+word lists are in `../WoWyrd-bussiness/docs/messaging/POSITIONING_AND_SAFE_WORDS.md`.
+
 The skill is installed locally at `.claude/skills/wowyrd-guardrail-checker/` (added 2026-10-17).
 Parent-directory skills are not invocable by name, so before that date this rule could not
 actually be followed here. The canonical copy is `../WoWyrd-bussiness/.claude/skills/
@@ -41,6 +46,12 @@ changes, recopy it; never edit this one in place.
   the minimum version the doc states. Check `git grep <thing> <tag>` in `../WoWyrd/`.
 - Every link must be openable by a customer: this repo is public, `wowyrd-lts` and the other
   `chavychaze` repos are private, and so are paths into `../WoWyrd/` (e.g. `specs/...`).
+
+## Git in shared checkouts (added 2026-10-22)
+
+Several Claude sessions may work in this checkout. Commit explicit paths only (`git add <file>`).
+Never use `git commit -a` or `git add -A`: they can sweep another session's uncommitted edits into
+an unrelated commit.
 
 ## Versioning
 

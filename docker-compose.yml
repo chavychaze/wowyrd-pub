@@ -1,6 +1,6 @@
 ## WoWyrd — Client install (compiled images only, no source)
 ##
-## This is the minimal PoC stack (docs/product/POC_PACKAGE.md in the source repo): wowyrd-app +
+## This is the minimal install stack: wowyrd-app +
 ## wowyrd-dashboard + postgres + redis. No `build:` key anywhere — every image is pulled
 ## pre-compiled from ghcr.io/chavychaze; this repo never contains WoWyrd's Rust/C source.
 ##
@@ -18,7 +18,7 @@ services:
     container_name: wowyrd-app
     restart: unless-stopped
     # eBPF requirements on Linux (gracefully degrades to PostgreSQL-only mode if unavailable —
-    # this is the expected, supported mode on a first PoC install; see README.md).
+    # this is the expected, supported mode on a first pilot install; see README.md).
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -42,7 +42,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - API_KEYS=${API_KEYS:?set API_KEYS in .env}
       # Safe by default — no automatic blocks. Change only deliberately, after evidence
-      # review (docs/product/POC_PACKAGE.md's pre-flight checklist in the source repo).
+      # review.
       - ENFORCEMENT_MODE=${ENFORCEMENT_MODE:-observe}
       - BPF_OBJECT_PATH=/usr/local/share/wowyrd/tc.bpf.o
       - NETWORK_INTERFACE=${NETWORK_INTERFACE:-}

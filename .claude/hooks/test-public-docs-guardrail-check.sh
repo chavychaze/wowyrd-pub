@@ -22,6 +22,7 @@ cat >"$TMP/positioning.md" <<'MD'
 
 ## Avoid these words
 
+**Since 2026-10-22 (founder):** "PoC" · "we are building" — it is a built product; offer a pilot. ·
 production-ready · patented · "1–5 µs" / "10,000× faster" or any exact latency claim ·
 "AI-powered" as the headline · "replaces your fraud/AML/KYC stack".
 
@@ -92,6 +93,14 @@ done
 printf 'Detail: the term not-a-term lives outside the avoid section.\n' >>"$REPO/README.md"
 run 0 "only the avoid section is parsed"              "git commit -am x"
 reset_repo
+for line in 'A minimal PoC stack.' 'We are building it.'; do
+  printf '%s\n' "$line" >>"$REPO/README.md"
+  run 2 "term after a bold label: $line"              "git commit -am x" deny
+  reset_repo
+done
+printf 'The epoch timestamp is a built product feature; offer a pilot.\n' >>"$REPO/README.md"
+run 0 "word-bounded term, rationale prose not a term" "git commit -am x"
+reset_repo
 
 echo "== non-public files are not scanned =="
 printf 'production-ready\n' >>"$REPO/CLAUDE.md"
@@ -133,7 +142,7 @@ if [ -f "$REAL_POSITIONING" ]; then
   terms="$(python3 -I -B -c 'import importlib.util,sys
 s=importlib.util.spec_from_file_location("scan",sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
 print("\n".join(m.avoid_terms(sys.argv[2])))' "$SCANNER" "$REAL_POSITIONING")"
-  for want in production-ready patented AI-powered; do
+  for want in production-ready patented AI-powered PoC prototype "we are building"; do
     if printf '%s\n' "$terms" | grep -qx "$want"; then echo "ok    real doc yields term: $want"
     else echo "FAIL  real doc missing term: $want"; fail=1; fi
   done
