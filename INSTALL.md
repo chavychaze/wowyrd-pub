@@ -24,10 +24,16 @@ echo "$WOWYRD_PAT" | docker login ghcr.io -u <your-github-username> --password-s
 
 ## 3. Verify the images are genuinely signed by WoWyrd (recommended before first pull)
 
-Releases from `v0.3.4` onward are signed with
-[cosign](https://docs.sigstore.dev/cosign/overview/) using GitHub Actions' own keyless/OIDC identity
-(Sigstore's public Fulcio/Rekor infrastructure) — no shared signing key exists to leak or need
-rotating. Earlier releases are unsigned. Install cosign
+`v0.3.4` is signed with [cosign](https://docs.sigstore.dev/cosign/overview/) using GitHub
+Actions' own keyless/OIDC identity (Sigstore's public Fulcio/Rekor infrastructure) — no shared
+signing key exists to leak or need rotating.
+
+**`v0.3.5` is not signed.** Its images were built and pushed manually while the signed release
+pipeline was unavailable. `cosign verify` fails against `0.3.5`, and that failure says nothing
+about the images' integrity either way. Compare the image digests on the `v0.3.5` Releases page
+entry instead. A future release will restore signing. Releases before `v0.3.4` are unsigned too.
+
+To verify `0.3.4`, install cosign
 ([instructions](https://docs.sigstore.dev/cosign/system_config/installation/)), then:
 
 ```bash
@@ -42,18 +48,17 @@ cosign verify \
   ghcr.io/chavychaze/wowyrd-dashboard:0.3.4
 ```
 
-Replace `0.3.4` with the version you pin. The image digests for each release are on its
-Releases page entry.
+The image digests for each release are on its Releases page entry.
 
-A Software Bill of Materials (CycloneDX format) for each signed image — `wowyrd-app.cdx.json` and
-`bom.json` respectively — is attached to each signed release on this repo's Releases page for a
+A Software Bill of Materials (CycloneDX format) for each image — `wowyrd-app.cdx.json` and
+`bom.json` respectively — is attached to each release on this repo's Releases page for a
 vendor-security review.
 
 ## 4. Configure and start (embedded/SQLite profile — no separate database to provision)
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.3.4 (drop the leading "v" — see README.md's
+# edit .env: set WOWYRD_VERSION=0.3.5 (drop the leading "v" — see README.md's
 # "Versions" section),
 # API_KEYS, and POSTGRES_PASSWORD to any placeholder value (this profile never connects to
 # Postgres, but Compose still validates the variable exists — see docker-compose.lite.yml's
@@ -70,8 +75,8 @@ docker compose -f docker-compose.yml -f docker-compose.lite.yml config --service
 docker ps   # expect exactly wowyrd-app + wowyrd-dashboard
 ```
 
-From `v0.3.4`, this profile ships the full 38-rule baseline pack, the same as the default
-Postgres+Redis profile.
+This profile ships the same rule pack as the default Postgres+Redis profile: 41 rules in `v0.3.5`
+(38 sending-side and 3 receiving-side), 38 in `v0.3.4`.
 
 ## 5. Confirm shadow mode is running
 

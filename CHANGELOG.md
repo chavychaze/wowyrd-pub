@@ -4,6 +4,42 @@ Every version published on this repository's
 [Releases page](https://github.com/chavychaze/wowyrd-pub/releases), newest first. Each section is
 built from that version's Release notes. Earlier versions were not published here.
 
+## v0.3.5 — 2026-10-22
+
+> **Not cosign-signed.** `v0.3.5` images are unsigned; see "Installing this version" below.
+
+### What's new
+
+- **Receiving-side (inbound) mule detection.** Every mule signal WoWyrd shipped before this
+  release looked at convergence on a payout destination from the sending side. This release adds
+  the receiving side: three new rules detect money arriving at one of your own accounts from
+  multiple first-time external senders, a credit followed by most of it leaving again within
+  minutes (pass-through/layering), and a new account's first large incoming credit. 41 rules total
+  now (38 sending-side, 3 receiving-side) — identical rule pack across the standard and Lite
+  (embedded SQLite) editions.
+- **Direction-aware scoring.** The 38 pre-existing rules now explicitly apply only to outgoing
+  transactions — a receiving-side event never double-fires an unrelated sending-side rule, and
+  never inflates a customer's own velocity counters or geo-history from an unrelated event.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.3.5`, `ghcr.io/chavychaze/wowyrd-dashboard:0.3.5` (no
+leading `v` on the image tag — see `chavychaze/wowyrd-pub`'s `INSTALL.md` for the full install
+flow).
+
+Image digests:
+
+- `ghcr.io/chavychaze/wowyrd-app:0.3.5` — `sha256:b551eb5255d6c5189b719038d824425e1454ce6fc68a1e2d3e6d89e0e3d33839`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.3.5` — `sha256:c8d907be03d14217670530d24557a813d6c92839fc0aaa9f2408c88a78cf5a23`
+
+**This release is not cosign-signed.** The images were built and pushed manually while the
+signed release pipeline was unavailable. `INSTALL.md`'s `cosign verify` step will not succeed
+against `0.3.5` specifically — a future release will restore signing once the pipeline is running
+again. The full local test suite (813/813), lint, and static-analysis checks all ran clean
+before this release shipped.
+
+Available now — install it in your own environment today.
+
 ## v0.3.4 — 2026-10-18
 
 ### What's new
