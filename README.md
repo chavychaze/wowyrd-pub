@@ -16,16 +16,21 @@ repository.
 ## What's here
 
 - `docker-compose.yml` — the minimal install stack: `wowyrd-app` (the risk engine),
-  `wowyrd-dashboard` (the evidence/review UI), PostgreSQL, and Redis. No `build:` step — every image is pulled
-  pre-compiled from `ghcr.io/chavychaze`.
+  `wowyrd-dashboard` (the evidence/review UI), PostgreSQL, and Redis. No `build:` step — every
+  image is pulled pre-compiled from `ghcr.io/chavychaze`.
+- `docker-compose.lite.yml` — an overlay for a quick look without a database (embedded SQLite,
+  2 containers). Not a pilot profile: see "Pilot install" below.
 - `.env.example` — copy to `.env` and fill in before starting.
 
 ## Prerequisites
 
 - Docker + Docker Compose.
-- Linux (kernel 5.15+) if you want optional eBPF-based enforcement later. On macOS, or on an
-  older kernel, WoWyrd runs in PostgreSQL-only mode automatically — this is a fully supported
-  mode for a first observe-only pilot, not a degraded fallback to work around.
+- A Linux host for this stack. Kernel 5.15+ only if you want optional eBPF-based enforcement
+  later. On an older kernel, WoWyrd runs in PostgreSQL-only mode automatically — this is a fully
+  supported mode for a first observe-only pilot, not a degraded fallback to work around.
+- macOS / Docker Desktop: this stack's host networking leaves the API (port 8090) unreachable
+  from the Mac itself. On a Mac, use `docker-compose.lite.yml` for a quick look only — see
+  [`INSTALL.md`](INSTALL.md).
 - Threat-intel enrichment (Tor/VPN/datacenter/disposable-email/IP reputation) is fetched
   in-process on a schedule — no extra setup needed. Optional local intelligence files
   (IP2Location BIN, MaxMind GeoLite2, a card-BIN database) go in `./config/intel/` if you have
@@ -76,11 +81,16 @@ pull will fail with "manifest unknown."
 observe-first by design: review the evidence it produces before enabling any autonomous
 enforcement, and only change this setting deliberately, after that review.
 
-## Pilot install (no separate database to provision)
+## Pilot install
 
-For a pilot on your own data — embedded SQLite backend, shadow-mode only, nothing
-privileged/eBPF-related — see [`INSTALL.md`](INSTALL.md), which also covers verifying image
-signatures (`cosign verify`) before you pull. `v0.3.4` is signed; `v0.3.5` is not.
+For a pilot on your own data, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
+(`docker-compose.yml`: PostgreSQL + Redis), because the evidence report, retro-analysis and
+champion-challenger comparison need it. `INSTALL.md` also covers verifying image signatures
+(`cosign verify`) before you pull. `v0.3.4` is signed; `v0.3.5` is not.
+
+`docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look at
+transaction evaluation and the case queue only. It has no evidence report, so it is not a pilot
+profile. `INSTALL.md` lists every feature it leaves out.
 
 ## Support
 

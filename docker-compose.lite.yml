@@ -1,7 +1,11 @@
 ## WoWyrd — embedded lite profile (ADR-0009 in the source repo)
 ##
-## For a client install that can't (or doesn't want to) provision a standalone Postgres/Redis
-## service: collapses the stack to wowyrd-app + wowyrd-dashboard only. No separate DB/cache
+## For a quick look without provisioning a standalone Postgres/Redis service: collapses the
+## stack to wowyrd-app + wowyrd-dashboard only. NOT a pilot profile: transaction evaluation and
+## the case queue work, but the evidence report, retro-analysis, champion-challenger, manager
+## KPIs, Author tab, /v1/feedback, payment callback, step-up, webhooks and action gates return
+## "not available in the embedded lite profile". A pilot uses docker-compose.yml alone — see
+## INSTALL.md. No separate DB/cache
 ## container, no port to open for either. STORAGE_BACKEND=sqlite is real and verified (not a
 ## placeholder) — confirmed via a live run the night this was written.
 ##
