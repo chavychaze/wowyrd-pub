@@ -154,6 +154,16 @@ def classify_git(args):
         toks = args_without_values(rest, COMMIT_OPTS_WITH_VALUE)
         if "--no-verify" in toks or any("n" in short_flags(t) for t in toks):
             return "a --no-verify commit (skips this repo's own other hooks)"
+        if "--all" in toks or any("a" in short_flags(t) for t in toks):
+            return ("a commit -a / --all (it stages every tracked change in a shared checkout, "
+                    "including another session uncommitted work; stage explicit paths instead)")
+    if sub == "add":
+        toks = args_without_values(rest, {"--chmod", "--pathspec-from-file"})
+        for t in toks:
+            if t in {"-A", "--all", "-u", "--update", "--no-ignore-removal", ".", ":/", "*", "./"}:
+                return (f"a bulk git add ({t}) in a shared checkout; stage explicit paths instead")
+            if short_flags(t) & {"A", "u"}:
+                return (f"a bulk git add ({t}) in a shared checkout; stage explicit paths instead")
     if sub == "reset" and "--hard" in rest:
         return "git reset --hard"
     if sub in {"rebase", "filter-branch", "filter-repo"}:
