@@ -30,13 +30,12 @@ the same rule pack is loaded. Step 7 covers the Lite profile.
 ## 1. Prerequisites
 
 - Docker + Docker Compose.
-- A Linux host. The Full profile runs `wowyrd-app` with host networking and privileged mode, for
-  optional eBPF enforcement. eBPF is optional: without it (on a kernel older than 5.15, or with
-  `NETWORK_INTERFACE` unset) WoWyrd runs in PostgreSQL-only mode.
-- Not macOS / Docker Desktop. With host networking under Docker Desktop, `wowyrd-app`'s port 8090
-  is known to be unreachable from the Mac itself, so the dashboard cannot reach the API. This
-  runbook does not cover a Full install on macOS; ask your WoWyrd engineering contact if you need
-  one. The Lite profile in step 7 does run on macOS.
+- A Linux host for a pilot. The Full profile runs `wowyrd-app` with host networking and
+  privileged mode, for optional eBPF enforcement. eBPF is optional: without it (on a kernel older
+  than 5.15, or with `NETWORK_INTERFACE` unset) WoWyrd runs in PostgreSQL-only mode.
+- macOS is for evaluation or a demo only — see "macOS / Docker Desktop" at the end of step 4.
+  Use the macOS overlay to evaluate WoWyrd on a Mac. Run a pilot on your own data on a Linux
+  server.
 - A GitHub Personal Access Token scoped to `read:packages` (your WoWyrd engineering contact
   issues this on request) — both images are private.
 - `WOWYRD_VERSION` **0.3.4 or later.** `v0.3.4` is the first version published on this repo's
@@ -97,6 +96,21 @@ This starts 4 containers. Confirm that directly:
 ```bash
 docker compose ps   # expect wowyrd-app, wowyrd-dashboard, wowyrd-postgres, wowyrd-redis
 ```
+
+### macOS / Docker Desktop (evaluation or demo only)
+
+On Docker Desktop, the Full profile's host networking leaves `wowyrd-app`'s port 8090 unreachable
+from the Mac itself, so the dashboard cannot reach the API. To run the Full profile on a Mac for
+an evaluation or a demo, add the `docker-compose.macos.yml` overlay:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.macos.yml up -d
+```
+
+The overlay moves `wowyrd-app` onto Compose's normal network and turns eBPF off. WoWyrd then runs
+in PostgreSQL-only mode, with the same 4 containers and the same features as the Full profile on
+Linux, except optional eBPF enforcement. Use the macOS overlay to evaluate WoWyrd on a Mac. Run a
+pilot on your own data on a Linux server. The Lite profile (step 7) also runs on macOS.
 
 ## 5. Confirm shadow mode is running
 

@@ -18,6 +18,8 @@ repository.
 - `docker-compose.yml` — the minimal install stack: `wowyrd-app` (the risk engine),
   `wowyrd-dashboard` (the evidence/review UI), PostgreSQL, and Redis. No `build:` step — every
   image is pulled pre-compiled from `ghcr.io/chavychaze`.
+- `docker-compose.macos.yml` — an overlay that runs the same stack on macOS / Docker Desktop
+  for an evaluation or a demo (bridge networking, eBPF off).
 - `docker-compose.lite.yml` — an overlay for a quick look without a database (embedded SQLite,
   2 containers). Not a pilot profile: see "Pilot install" below.
 - `.env.example` — copy to `.env` and fill in before starting.
@@ -25,12 +27,14 @@ repository.
 ## Prerequisites
 
 - Docker + Docker Compose.
-- A Linux host for this stack. Kernel 5.15+ only if you want optional eBPF-based enforcement
-  later. On an older kernel, WoWyrd runs in PostgreSQL-only mode automatically — this is a fully
-  supported mode for a first observe-only pilot, not a degraded fallback to work around.
+- A Linux host for this stack (macOS: evaluation or demo only, see below). Kernel 5.15+ only if
+  you want optional eBPF-based enforcement later. On an older kernel, WoWyrd runs in
+  PostgreSQL-only mode automatically — this is a fully supported mode for a first observe-only
+  pilot, not a degraded fallback to work around.
 - macOS / Docker Desktop: this stack's host networking leaves the API (port 8090) unreachable
-  from the Mac itself. On a Mac, use `docker-compose.lite.yml` for a quick look only — see
-  [`INSTALL.md`](INSTALL.md).
+  from the Mac itself. For an evaluation or a demo on a Mac, add the `docker-compose.macos.yml`
+  overlay — see [`INSTALL.md`](INSTALL.md). Use the macOS overlay to evaluate WoWyrd on a Mac.
+  Run a pilot on your own data on a Linux server.
 - Threat-intel enrichment (Tor/VPN/datacenter/disposable-email/IP reputation) is fetched
   in-process on a schedule — no extra setup needed. Optional local intelligence files
   (IP2Location BIN, MaxMind GeoLite2, a card-BIN database) go in `./config/intel/` if you have
@@ -55,6 +59,7 @@ pull`/`up` calls (including version upgrades) don't need it repeated.
 cp .env.example .env
 # edit .env: set WOWYRD_VERSION (see "Versions" below), POSTGRES_PASSWORD, API_KEYS
 docker compose up -d
+# macOS (evaluation/demo): docker compose -f docker-compose.yml -f docker-compose.macos.yml up -d
 ```
 
 Check it's healthy:

@@ -2,7 +2,14 @@
 
 Every version published on this repository's
 [Releases page](https://github.com/chavychaze/wowyrd-pub/releases), newest first. Each section is
-built from that version's Release notes. Earlier versions were not published here.
+built from that version's Release notes. Earlier versions were not published here. Changes to
+this repository's own files between releases are listed under "Unreleased".
+
+## Unreleased
+
+- `docker-compose.macos.yml`: an overlay that runs the Full profile (PostgreSQL + Redis) on
+  macOS / Docker Desktop for an evaluation or a demo — bridge networking, eBPF off. No new images.
+  A pilot still runs on a Linux host. See `INSTALL.md`, step 4.
 
 ## v0.3.5 — 2026-10-22
 
