@@ -3,8 +3,9 @@
 The authoritative, step-by-step install procedure for a PILOT-tier evaluation: shadow-mode only,
 Full profile (PostgreSQL + Redis), no Kubernetes, no air-gapped delivery, no kernel-enforcement
 packaging. `README.md` stays the general overview; this file is the one source of truth for "what
-do I actually run" — update this file when the install procedure changes, don't duplicate its
-steps elsewhere (the pilot-tier Deploy webpage links here rather than restating these steps).
+do I actually run" — update this file when the install procedure changes.
+[wowyrd.net/install/](https://wowyrd.net/install/) gives a short summary of these steps and
+defers to this file. This file is the source of truth.
 
 ## Which profile to use
 
@@ -65,8 +66,11 @@ The diagram shows steps 1–5. Step 7 (Lite) is a separate quick look, not a pil
 ## 2. Authenticate to the image registry (one-time per machine)
 
 ```bash
-echo "$WOWYRD_PAT" | docker login ghcr.io -u <your-github-username> --password-stdin
+echo "$WOWYRD_PAT" | docker login ghcr.io -u wowyrd --password-stdin
 ```
+
+The registry checks the token only. The user name can be any value, and you don't need a GitHub
+account of your own.
 
 ## 3. Verify the images are genuinely signed by WoWyrd (recommended before first pull)
 

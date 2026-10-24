@@ -47,8 +47,10 @@ The `wowyrd-app`/`wowyrd-dashboard` images are **private** — `docker compose u
 Personal Access Token scoped to `read:packages` on request; then:
 
 ```bash
-echo "$WOWYRD_PAT" | docker login ghcr.io -u <your-github-username> --password-stdin
+echo "$WOWYRD_PAT" | docker login ghcr.io -u wowyrd --password-stdin
 ```
+
+The registry checks the token only. The user name can be any value.
 
 This is a one-time step per machine — Docker caches the credential, so subsequent `docker compose
 pull`/`up` calls (including version upgrades) don't need it repeated.
