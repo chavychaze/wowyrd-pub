@@ -10,6 +10,9 @@ this repository's own files between releases are listed under "Unreleased".
 - `docker-compose.macos.yml`: an overlay that runs the Full profile (PostgreSQL + Redis) on
   macOS / Docker Desktop for an evaluation or a demo — bridge networking, eBPF off. No new images.
   A pilot still runs on a Linux host. See `INSTALL.md`, step 4.
+- `OPERATIONS.md`: upgrade, backup, rollback and uninstall runbook for the Full profile.
+- `INSTALL.md` step 2, option B: install on a host without registry access (`docker save` /
+  `docker load`, checked by image ID).
 
 ## v0.3.5 — 2026-10-22
 

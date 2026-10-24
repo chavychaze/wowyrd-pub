@@ -3,7 +3,8 @@
 The authoritative, step-by-step install procedure for a PILOT-tier evaluation: shadow-mode only,
 Full profile (PostgreSQL + Redis), no Kubernetes, no air-gapped delivery, no kernel-enforcement
 packaging. `README.md` stays the general overview; this file is the one source of truth for "what
-do I actually run" — update this file when the install procedure changes.
+do I actually run" — update this file when the install procedure changes. Upgrade, backup,
+rollback and uninstall are in [`OPERATIONS.md`](OPERATIONS.md).
 [wowyrd.net/install/](https://wowyrd.net/install/) gives a short summary of these steps and
 defers to this file. This file is the source of truth.
 
@@ -71,6 +72,68 @@ echo "$WOWYRD_PAT" | docker login ghcr.io -u wowyrd --password-stdin
 
 The registry checks the token only. The user name can be any value, and you don't need a GitHub
 account of your own.
+
+### Option B: a host without registry access
+
+If the install host cannot reach `ghcr.io`, copy the images to it as one file.
+
+```mermaid
+flowchart LR
+    subgraph C[Machine with registry access]
+      A1[docker pull the 4 images] --> A2[Check RepoDigests against<br/>the Releases page]
+      A2 --> A3[Note each image ID]
+      A3 --> A4[docker save to one .tar<br/>sha256sum the .tar]
+    end
+    subgraph H[Install host]
+      B1[sha256sum -c the .tar] --> B2[docker load]
+      B2 --> B3[Image IDs match<br/>the noted IDs?]
+    end
+    A4 -->|copy .tar and .sha256| B1
+    B3 -->|Yes| B4[Continue at step 4]
+```
+
+On a machine with registry access (log in as above first, and do step 3 there):
+
+1. Pull the four images:
+   ```bash
+   V=0.3.5
+   docker pull ghcr.io/chavychaze/wowyrd-app:$V
+   docker pull ghcr.io/chavychaze/wowyrd-dashboard:$V
+   docker pull postgres:15-alpine
+   docker pull redis:7-alpine
+   ```
+2. Show the digest and the ID of each WoWyrd image:
+   ```bash
+   for i in wowyrd-app wowyrd-dashboard; do
+     docker image inspect ghcr.io/chavychaze/$i:$V --format '{{index .RepoDigests 0}}  {{.Id}}'
+   done
+   ```
+   The digest must match the digest on the version's Releases page entry. Note each image ID.
+3. Save the images to one file and make its checksum:
+   ```bash
+   docker save -o wowyrd-$V.tar ghcr.io/chavychaze/wowyrd-app:$V \
+     ghcr.io/chavychaze/wowyrd-dashboard:$V postgres:15-alpine redis:7-alpine
+   sha256sum wowyrd-$V.tar > wowyrd-$V.tar.sha256    # macOS: shasum -a 256
+   ```
+4. Copy `wowyrd-$V.tar` and `wowyrd-$V.tar.sha256` to the install host.
+
+On the install host:
+
+1. Check the file and load it:
+   ```bash
+   sha256sum -c wowyrd-$V.tar.sha256
+   docker load -i wowyrd-$V.tar
+   ```
+2. Show the image IDs:
+   ```bash
+   docker image inspect ghcr.io/chavychaze/wowyrd-app:$V ghcr.io/chavychaze/wowyrd-dashboard:$V --format '{{.Id}}'
+   ```
+   Each ID must match the ID that you noted. After `docker load`, `RepoDigests` is empty. That is
+   normal: `docker save` writes a new manifest, so the Releases page digest cannot be checked on
+   this host. The image ID is the check here.
+3. Continue at step 4. Compose uses the loaded images and does not try to pull them.
+
+The `0.3.5` images are built for `linux/amd64` only.
 
 ## 3. Verify the images are genuinely signed by WoWyrd (recommended before first pull)
 

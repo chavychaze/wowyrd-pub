@@ -23,6 +23,8 @@ repository.
 - `docker-compose.lite.yml` — an overlay for a quick look without a database (embedded SQLite,
   2 containers). Not a pilot profile: see "Pilot install" below.
 - `.env.example` — copy to `.env` and fill in before starting.
+- [`INSTALL.md`](INSTALL.md) — the pilot install runbook.
+- [`OPERATIONS.md`](OPERATIONS.md) — upgrade, backup, rollback and uninstall.
 
 ## Prerequisites
 
