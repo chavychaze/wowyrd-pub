@@ -27,6 +27,27 @@ marked "Not available". Rules that need dormancy or threat-indicator history (e.
 wake, known-bad indicator) may not fire on Lite, so detection is not the same as Full, even though
 the same rule pack is loaded. Step 7 covers the Lite profile.
 
+## Install flow
+
+```mermaid
+flowchart TD
+    A[Get a read:packages token from your WoWyrd contact] --> B[docker login ghcr.io]
+    B --> C{Version to install}
+    C -->|0.3.4| D[cosign verify both images]
+    C -->|0.3.5| E[Compare digests with the Releases page]
+    D --> F[cp .env.example .env<br/>set WOWYRD_VERSION, POSTGRES_PASSWORD, API_KEYS]
+    E --> F
+    F --> G{Host}
+    G -->|Linux: pilot| H[docker compose up -d]
+    G -->|macOS: evaluation or demo| I[docker compose -f docker-compose.yml<br/>-f docker-compose.macos.yml up -d]
+    H --> J[4 containers: app, dashboard, postgres, redis]
+    I --> J
+    J --> K[curl localhost:8090/health]
+    K --> L[Open the dashboard on port 3000<br/>ENFORCEMENT_MODE=observe: nothing is blocked]
+```
+
+The diagram shows steps 1–5. Step 7 (Lite) is a separate quick look, not a pilot.
+
 ## 1. Prerequisites
 
 - Docker + Docker Compose.
