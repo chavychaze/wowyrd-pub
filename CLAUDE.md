@@ -53,6 +53,13 @@ Several Claude sessions may work in this checkout. Commit explicit paths only (`
 Never use `git commit -a` or `git add -A`: they can sweep another session's uncommitted edits into
 an unrelated commit.
 
+## Diagrams (founder rule, 2026-10-24, mandatory)
+
+Every technical detail and program decision in a repo file (install flow, upgrade/rollback, licence
+check, what a component does and why) gets a Mermaid diagram in the same file, next to the text.
+The text explains the diagram. In public docs the diagram is public text: the guardrail applies to
+its labels too. The full rule is in `~/.claude/CLAUDE.md` ("Diagram rule").
+
 ## Versioning
 
 No `latest` tag — real releases are pinned explicitly. See `README.md`'s "Versions" section before
