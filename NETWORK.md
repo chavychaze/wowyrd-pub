@@ -37,7 +37,8 @@ flowchart TD
 ## Run with no outbound connections
 
 There is no single setting that turns off all outbound connections today. To run fully offline,
-block outbound traffic at the network level:
+block outbound traffic at the network level. Fully offline, the IP-reputation, Tor, VPN,
+datacenter and disposable-email signals have no data (see below).
 
 1. Load the images from a file (`INSTALL.md`, step 2, option B).
 2. Leave `INTEL_BUNDLE_URL` unset.
@@ -45,7 +46,16 @@ block outbound traffic at the network level:
 4. Block `fonts.googleapis.com` and `fonts.gstatic.com` for the analysts' browsers, or accept that
    the browser fetches the fonts.
 
-What happens when the lists cannot be fetched: the code logs a warning and keeps the data that it
-already has. We have not yet tested this with the hosts blocked. Without the lists, the
-IP-reputation, Tor, VPN, datacenter and disposable-email signals have no data. We have also not
-tested the dashboard with the font hosts blocked.
+What happens when a list cannot be fetched in `0.3.5`:
+
+- **The host cannot be reached (blocked, timeout, DNS failure):** the app logs a warning and keeps
+  the data that it already has.
+- **The host sends an HTTP error page (for example a 5xx response):** the app reads the error page
+  as the list and counts the list as refreshed. It does not try again for 24 hours. The error
+  page can add wrong entries. The next release fixes this.
+
+Each list entry expires 2 days after the last successful download of its list. So if the hosts
+stay blocked, the IP-reputation, Tor, VPN, datacenter and disposable-email signals have no data
+after 2 days. On a new install with the hosts blocked from the start, they have no data at all.
+
+We have not tested the dashboard with the font hosts blocked.
