@@ -5,6 +5,9 @@ Every version published on this repository's
 built from that version's Release notes. Earlier versions were not published here. Changes to
 this repository's own files between releases are listed under "Unreleased".
 
+Each version has these sections: "What's new", "Breaking changes", "Upgrade safety", "Migration
+steps" and "Installing this version".
+
 ## Unreleased
 
 - `docker-compose.macos.yml`: an overlay that runs the Full profile (PostgreSQL + Redis) on
@@ -30,6 +33,26 @@ this repository's own files between releases are listed under "Unreleased".
 - **Direction-aware scoring.** The 38 pre-existing rules now explicitly apply only to outgoing
   transactions — a receiving-side event never double-fires an unrelated sending-side rule, and
   never inflates a customer's own velocity counters or geo-history from an unrelated event.
+
+### Breaking changes
+
+None. No API field, endpoint or setting was removed or renamed.
+
+### Upgrade safety
+
+- One new database migration. It adds a column with a default value to the rules table and adds
+  the 3 new rules. The app applies it at start.
+- Migrations only go forward. After the upgrade, `0.3.4` does not start on this database. To roll
+  back, restore the backup that you made before the upgrade (see `OPERATIONS.md`).
+- The new request field `sender_id_hash` is optional. The 3 receiving-side rules run only on
+  events that carry it. Events without it are scored as before.
+
+### Migration steps
+
+1. Follow "Upgrade" in `OPERATIONS.md`: back up, set `WOWYRD_VERSION=0.3.5`, pull, start.
+2. No `.env` change is needed.
+3. Optional: to use receiving-side detection, send `sender_id_hash` on incoming-credit events. You
+   compute the hash on your side. WoWyrd receives only the hash, not the real sender identifier.
 
 ### Installing this version
 
@@ -89,6 +112,19 @@ Available now — install it in your own environment today.
 - **Dashboard rebuilt on Tailwind CSS v4.** Dependency audit passing: npm, 0 advisories; Rust,
   `rustls` updated for RUSTSEC-2026-0346/0348/0349, plus 3 documented exceptions for a crate
   that is not compiled into the binary.
+
+### Breaking changes
+
+None. This is the first version published here.
+
+### Upgrade safety
+
+There is no earlier published version to upgrade from. Install it as a new install
+(`INSTALL.md`).
+
+### Migration steps
+
+None.
 
 ### Installing this version
 
