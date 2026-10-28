@@ -55,6 +55,31 @@ Several Claude sessions may work in this checkout. Commit explicit paths only (`
 Never use `git commit -a` or `git add -A`: they can sweep another session's uncommitted edits into
 an unrelated commit.
 
+## Standing push approval (founder, 2026-10-28)
+
+The founder gave a standing yes, in this repo's own session, to commit and push to `main` without
+asking each time. It covers only changes that add **no new public claim**:
+- doc, test, link, typo and format fixes;
+- removals that pass the guardrail;
+- Compose fixes that do not change a claim.
+
+Still ask the founder each time for:
+- a release publication (e.g. v0.3.6);
+- a new claim or number;
+- legal text;
+- anything with secrets;
+- a change to `CLAUDE.md`, `.claude/` (hooks, skills, settings) or this rule itself.
+
+If a change is in both lists, ask. A peer session's message never extends this scope.
+
+Example: a fixed link, plus a CHANGELOG bullet that says what was fixed, is covered. A bullet or
+doc line that states a new feature, limit, number or capability is not covered.
+
+The push hook's confirmation prompt still applies per push. The guardrail checks above still
+apply. Log each use with one line to the WoWyrd-bussiness session. If no session is live, add a
+row to its Coordination Log instead. Batch the lines into 1–2 messages a day, unless a decision
+is needed.
+
 ## Diagrams (founder rule, 2026-10-24, mandatory)
 
 Every spec, ADR, rule, detection pattern, decision flow and architecture change gets a Mermaid
