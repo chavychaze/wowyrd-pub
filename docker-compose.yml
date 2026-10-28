@@ -53,6 +53,8 @@ services:
       # real value before relying on this for any deployment retaining real customer data.
       - RETENTION_HASH_KEY=${RETENTION_HASH_KEY:-}
       - RETENTION_ANONYMIZE_AFTER_DAYS=${RETENTION_ANONYMIZE_AFTER_DAYS:-180}
+      - LICENSE_FILE=${LICENSE_FILE:-/etc/wowyrd/license.json}
+      - INTEL_BUNDLE_URL=${INTEL_BUNDLE_URL:-}
     depends_on:
       postgres:
         condition: service_healthy

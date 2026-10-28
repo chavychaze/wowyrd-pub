@@ -137,7 +137,7 @@ The `0.3.5` images are built for `linux/amd64` only.
 
 ## 3. Verify the images are genuinely signed by WoWyrd (recommended before first pull)
 
-`v0.3.4` is signed with [cosign](https://docs.sigstore.dev/cosign/overview/) using GitHub
+`v0.3.4` is signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/) using GitHub
 Actions' own keyless/OIDC identity (Sigstore's public Fulcio/Rekor infrastructure) — no shared
 signing key exists to leak or need rotating.
 
