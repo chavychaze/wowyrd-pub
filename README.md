@@ -26,6 +26,7 @@ repository.
 - [`INSTALL.md`](INSTALL.md) — the pilot install runbook.
 - [`OPERATIONS.md`](OPERATIONS.md) — upgrade, backup, rollback and uninstall.
 - [`SECURITY.md`](SECURITY.md) — how to report a vulnerability.
+- [`NETWORK.md`](NETWORK.md) — every outbound connection the stack makes, and how to run offline.
 
 ## Prerequisites
 
