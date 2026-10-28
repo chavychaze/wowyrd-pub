@@ -57,10 +57,13 @@ an unrelated commit.
 
 ## Diagrams (founder rule, 2026-10-24, mandatory)
 
-Every technical detail and program decision in a repo file (install flow, upgrade/rollback, licence
-check, what a component does and why) gets a Mermaid diagram in the same file, next to the text.
-The text explains the diagram. In public docs the diagram is public text: the guardrail applies to
-its labels too. The full rule is in `~/.claude/CLAUDE.md` ("Diagram rule").
+Every spec, ADR, rule, detection pattern, decision flow and architecture change gets a Mermaid
+diagram in the same file, next to the text. In this repo that means the flows the public docs
+describe (install, upgrade and rollback, uninstall, licence check, vulnerability reporting,
+outbound connections). Not needed for typo fixes, one-line config changes or prose-only docs
+(CHANGELOG bullets included). The text explains the diagram. In public docs the diagram is public
+text: the guardrail applies to its labels too. The full rule is in `~/.claude/CLAUDE.md`
+("Diagram rule"; narrowed to match it 2026-10-28).
 
 ## Open TODOs
 
