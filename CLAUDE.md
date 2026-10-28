@@ -1,7 +1,8 @@
 # wowyrd-pub — Working Rules
 
-This is the **public distribution repo**: compiled images only (`docker-compose.yml`,
-`docker-compose.lite.yml`, `.env.example`, `README.md`) — no source code. The engineering source
+This is the **public distribution repo**: compiled images only (the Compose files, `.env.example`
+and the public docs: `README.md`, `INSTALL.md`, `OPERATIONS.md`, `SECURITY.md`, `CHANGELOG.md`) —
+no source code. The engineering source
 lives in the private `../WoWyrd/` repo; all business/strategy/positioning material lives in
 `../WoWyrd-bussiness/`.
 
@@ -20,7 +21,8 @@ session directly if one's live — don't assume it'll be picked up from a pasted
 
 ## Guardrails still apply here
 
-`README.md` is public-facing text — any claim in it is subject to
+`README.md` and every other public `.md` here (`INSTALL.md`, `OPERATIONS.md`, `SECURITY.md`,
+`CHANGELOG.md`) are public-facing text — any claim in them is subject to
 `../WoWyrd-bussiness/docs/messaging/POSITIONING_AND_SAFE_WORDS.md` exactly as if it were website
 copy or a pitch deck. Being a different (and much smaller) repo isn't a reason to skip the
 `wowyrd-guardrail-checker` skill before changing wording here — it's exactly the kind of
