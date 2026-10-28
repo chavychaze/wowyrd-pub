@@ -25,6 +25,7 @@ repository.
 - `.env.example` — copy to `.env` and fill in before starting.
 - [`INSTALL.md`](INSTALL.md) — the pilot install runbook.
 - [`OPERATIONS.md`](OPERATIONS.md) — upgrade, backup, rollback and uninstall.
+- [`SECURITY.md`](SECURITY.md) — how to report a vulnerability.
 
 ## Prerequisites
 

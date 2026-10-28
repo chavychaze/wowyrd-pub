@@ -60,6 +60,11 @@ check, what a component does and why) gets a Mermaid diagram in the same file, n
 The text explains the diagram. In public docs the diagram is public text: the guardrail applies to
 its labels too. The full rule is in `~/.claude/CLAUDE.md` ("Diagram rule").
 
+## Open TODOs
+
+- `SECURITY.md` uses vitaliy@wowyrd.net until security@wowyrd.net exists (founder task, 2026-10-28).
+  Switch it then, and delete the HTML TODO at the top of `SECURITY.md`.
+
 ## Versioning
 
 No `latest` tag — real releases are pinned explicitly. See `README.md`'s "Versions" section before
