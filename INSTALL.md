@@ -22,6 +22,7 @@ defers to this file. This file is the source of truth.
 | Manager KPIs, Author tab | Yes | Not available |
 | Fraud feedback (`/v1/feedback`), confirmed-fraud import, payment callback | Yes | Not available |
 | Step-up, webhooks, action gates | Yes | Not available |
+| Personal data anonymization after the retention period | Yes, with `RETENTION_HASH_KEY` set (step 4) | Not available: Lite keeps all personal data |
 
 A pilot needs the evidence report, so a pilot uses the Full profile. Steps 1–6 below install it.
 The Lite profile returns a "not available in the embedded lite profile" error for every feature
@@ -172,7 +173,8 @@ vendor-security review.
 ```bash
 cp .env.example .env
 # edit .env: set WOWYRD_VERSION=0.3.5 (drop the leading "v" — see README.md's
-# "Versions" section), POSTGRES_PASSWORD, and API_KEYS.
+# "Versions" section), POSTGRES_PASSWORD, API_KEYS and RETENTION_HASH_KEY (see "Personal
+# data anonymization" below).
 # On an internet-facing host, also add POSTGRES_BIND=127.0.0.1 and REDIS_BIND=127.0.0.1, so the
 # database and cache ports are not exposed (both default to 0.0.0.0).
 
@@ -184,6 +186,26 @@ This starts 4 containers. Confirm that directly:
 ```bash
 docker compose ps   # expect wowyrd-app, wowyrd-dashboard, wowyrd-postgres, wowyrd-redis
 ```
+
+### Personal data anonymization (set it before you send real data)
+
+The Full profile anonymizes stored personal data (IP address, device, session, customer ID and
+blocked values) when it is older than `RETENTION_ANONYMIZE_AFTER_DAYS` (default 180 days; blocked
+values after 365 days). It does this only when `RETENTION_HASH_KEY` is set. In `.env.example`,
+`RETENTION_HASH_KEY` is empty.
+
+Without the key, the app keeps all personal data. It does not stop and does not show an error.
+Once a day, it logs "RETENTION_HASH_KEY not set — retention anonymization pass skipped entirely".
+
+To turn anonymization on:
+
+1. Make a key: `openssl rand -hex 32`.
+2. Set `RETENTION_HASH_KEY` in `.env` to this key. Keep a copy in your secrets store.
+3. Do not change the key later. After a change, customer IDs anonymized with the old key do not
+   match new ones.
+4. Restart `wowyrd-app` with the same `docker compose ... up -d` command that you used to start it.
+
+The Lite profile does not anonymize personal data. It keeps all of it, with or without the key.
 
 ### Optional: the datacenter ASN list
 
