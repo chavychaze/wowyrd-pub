@@ -44,6 +44,29 @@ shipped). Check for both, not just the first.
    letters, named surveys) — never "studies show" or an unsourced statistic. If the draft cites a
    stat without a source you can point to, that's a finding too.
 
+## Checks added 2026-10-22 (each from a real miss that day)
+
+Run these on every public or shareable artifact, in addition to the method above:
+1. **Ready-product tone.** No "PoC", "proof of concept", "prototype", "we are building". WoWyrd is
+   built, tested and installable today; offer "a pilot on your own data". "production-ready" stays
+   banned.
+2. **No internal money or ops matters in public text** (e.g. "CI blocked by a billing issue").
+   Say "the signed release pipeline was unavailable".
+3. **Release-signing truth.** Don't write "signed images" for a release that isn't cosign-signed
+   (v0.3.5 is not; v0.3.4 is). Check the release notes before using "signed".
+4. **Rule counts match the current release** (`docs/IMPACT_MAP.md` §B is the source; 41 public and
+   8 mule rules as of v0.3.5). PaySim numbers (29.9% / 1.55%) were measured on 2026-10-17 (35 rules) and confirmed unchanged by the 2026-10-31 rerun (46 rules): never pair them with a rule count (`../WoWyrd/docs/benchmarks/paysim-2026-10-31.md`).
+5. **One currency per deck: USD.** Convert with an official annual rate (Bank of England series
+   XUAAUSS for GBP) and footnote the rate and source.
+6. **Shareable files carry no private data.** PPTX speaker notes, PDFs and proposals must not name
+   warm-intro people or show CRM statuses ("Avoid", "Parked", internal conflicts). Grep the PPTX
+   notes XML (`unzip -p deck.pptx 'ppt/notesSlides/*.xml'`) before sharing.
+7. **Regulatory context needs a primary, dated source** in product text (release notes, docs). A
+   secondary report of an official's remark is fine in a pitch with attribution, not in release notes.
+8. **"Additional layer next to your current tools"** is the safe framing; never "replaces your stack".
+9. **Load balancers:** say "ingest adapters for Cloudflare, AWS ALB, AWS WAF, CloudWatch logs";
+   never "works behind Cloudflare out of the box" unless validated with a client.
+
 ## What NOT to do
 
 - Don't approve a draft based on a summary of the safe-words doc — read the actual current file.

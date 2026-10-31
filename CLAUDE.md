@@ -36,8 +36,8 @@ word lists are in `../WoWyrd-bussiness/docs/messaging/POSITIONING_AND_SAFE_WORDS
 The skill is installed locally at `.claude/skills/wowyrd-guardrail-checker/` (added 2026-10-17).
 Parent-directory skills are not invocable by name, so before that date this rule could not
 actually be followed here. The canonical copy is `../WoWyrd-bussiness/.claude/skills/
-wowyrd-guardrail-checker/SKILL.md`; this file is a byte-identical copy (sha1 `5e12e9d` as of
-2026-10-17, sibling-relative paths that resolve from this repo root). When the canonical copy
+wowyrd-guardrail-checker/SKILL.md`; this file is a byte-identical copy (sha1 `bc0f4dc` as of
+2026-10-31, sibling-relative paths that resolve from this repo root). When the canonical copy
 changes, recopy it; never edit this one in place.
 
 **Factual-drift checks specific to this repo** (each one went wrong in `INSTALL.md` on
