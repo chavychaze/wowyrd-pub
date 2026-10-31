@@ -10,7 +10,7 @@ Upgrade, backup, rollback and uninstall for the Full profile (PostgreSQL + Redis
 | `postgres_data` volume | Docker volume | Assessments, cases, rules, reports: all WoWyrd records |
 | `redis_data` volume | Docker volume | Velocity counters. Each counter expires by itself, the longest after 30 days |
 | `app_logs` volume | Docker volume | Application logs |
-| `.env` | Install directory | Version, passwords, API keys |
+| `.env` | Install directory | Version, passwords, API keys and `RETENTION_HASH_KEY`. If you lose this key, customer IDs that were anonymized with it do not match new ones. Keep a copy in your secrets store |
 | `config/intel/` | Install directory | Optional intelligence files and the licence file |
 
 ## Upgrade, backup and rollback
