@@ -38,7 +38,7 @@ flowchart TD
     B --> C{Version to install}
     C -->|0.3.4| D[cosign verify both images]
     C -->|0.3.5| E[Compare digests with the Releases page]
-    D --> F[cp .env.example .env<br/>set WOWYRD_VERSION, POSTGRES_PASSWORD, API_KEYS]
+    D --> F[cp .env.example .env<br/>set WOWYRD_VERSION, POSTGRES_PASSWORD,<br/>API_KEYS, RETENTION_HASH_KEY]
     E --> F
     F --> G{Host}
     G -->|Linux: pilot| H[docker compose up -d]
