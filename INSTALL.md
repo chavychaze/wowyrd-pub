@@ -185,6 +185,21 @@ This starts 4 containers. Confirm that directly:
 docker compose ps   # expect wowyrd-app, wowyrd-dashboard, wowyrd-postgres, wowyrd-redis
 ```
 
+### Optional: the datacenter ASN list
+
+No image contains a datacenter ASN list. Without one, the `datacenter_asn` rule is off and never
+fires. At start, the app logs "datacenter ASN list not loaded — datacenter_asn disabled". The
+`datacenter_ip` rule does not need this list.
+
+To turn the rule on:
+
+1. Create `config/intel/datacenter-asns.txt`.
+2. Write one ASN per line, as a number (for example `16509`). The app ignores blank lines and
+   lines that start with `#`.
+3. Send `client_asn` (a number) with each transaction to `POST /v1/evaluate`. The rule uses only
+   this field.
+4. Restart `wowyrd-app`. The app reads the list only at start.
+
 ### macOS / Docker Desktop (evaluation or demo only)
 
 On Docker Desktop, the Full profile's host networking leaves `wowyrd-app`'s port 8090 unreachable
