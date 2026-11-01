@@ -6,3 +6,7 @@
 
 # Python bytecode from running the hook scanner/tests
 __pycache__/
+
+# Internal Claude Code rules, hooks and skills: local only, this repo is public (founder, 2026-11-01)
+CLAUDE.md
+.claude/
