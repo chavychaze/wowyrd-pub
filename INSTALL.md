@@ -187,6 +187,22 @@ This starts 4 containers. Confirm that directly:
 docker compose ps   # expect wowyrd-app, wowyrd-dashboard, wowyrd-postgres, wowyrd-redis
 ```
 
+### Limit who can open the dashboard and the API (set it before you send real data)
+
+The dashboard web page contains the value of `API_KEYS`. Anyone who can open the page can read
+the key. With the key, they can call every API endpoint, including the endpoints that block,
+unblock and evaluate. This applies to the Full and Lite profiles.
+
+By default, the dashboard (port 3000) and `wowyrd-app` (port 8090) accept connections on all
+network interfaces. Do these steps:
+
+1. Put only one key in `API_KEYS`. The dashboard page contains all the keys in this value. Your
+   integration servers use the same key.
+2. Allow ports 3000 and 8090 only from your analysts' network and from your integration servers.
+   Use the host firewall or a VPN. In the Full profile, `wowyrd-app` uses the host network, so
+   the firewall is the only way to limit port 8090.
+3. Do not open ports 3000 and 8090 to the internet.
+
 ### Personal data anonymization (set it before you send real data)
 
 The Full profile anonymizes stored personal data (IP address, device, session, customer ID and
@@ -276,6 +292,9 @@ Confirm that directly if you want to:
 docker compose -f docker-compose.yml -f docker-compose.lite.yml config --services
 docker ps   # expect exactly wowyrd-app + wowyrd-dashboard
 ```
+
+The dashboard page contains the API key here too. Do the steps in step 4, "Limit who can open
+the dashboard and the API". In Lite, `WOWYRD_APP_PORT` sets the app port.
 
 ---
 

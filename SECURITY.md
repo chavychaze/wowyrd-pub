@@ -39,3 +39,10 @@ agree with you on the fix and on when the issue becomes public.
 - The Compose files and the documentation in this repository.
 
 Report a vulnerability in PostgreSQL, Redis or Docker to that project directly.
+
+## Known limitation: the dashboard holds a full API key
+
+The dashboard web page contains the value of `API_KEYS`. A person who can open the page can use
+that key on every API endpoint. Limit network access to the dashboard and the API as
+`INSTALL.md` step 4 describes ("Limit who can open the dashboard and the API"). You do not need
+to report this limitation to us.
