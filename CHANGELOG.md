@@ -47,10 +47,14 @@ No changes since `v0.3.6`.
 - **Retro-analysis report page.** `GET /v1/reports/retro-analysis` gives the evidence report as
   one HTML page, with each reason in plain English. To get a PDF, print the page from your
   browser.
-- **Evidence report, retro-analysis and fraud feedback on the Lite profile.** `/v1/feedback`,
-  confirmed-fraud import and the payment callback now also work on Lite. Champion-challenger
-  comparison, manager KPIs, step-up, webhooks and action gates are still Full profile only. See
-  `INSTALL.md`, "Which profile to use".
+- **Retro-analysis and fraud feedback on the Lite profile.** The retro-analysis report page,
+  `/v1/feedback`, confirmed-fraud import and the payment callback now also work on Lite. The
+  evidence report (`GET /v1/reports/evidence`), champion-challenger comparison, manager KPIs,
+  step-up, webhooks and action gates are still Full profile only. See `INSTALL.md`, "Which
+  profile to use".
+- **Known issue (Lite profile):** `GET /v1/reports/evidence` and `GET /v1/reports/manager-kpis`
+  return HTTP 500, not the "not available in the embedded lite profile" error. Use the
+  retro-analysis report page on Lite.
 - **Recent transactions when the dashboard opens.** `GET /v1/feed/recent` returns the last
   transactions (200 by default, 500 at most). The feed shows amount, payment type and country.
   The Allow, Review and Blocked counters count the risk decision. A mode label shows whether the

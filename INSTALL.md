@@ -17,7 +17,8 @@ defers to this file. This file is the source of truth.
 | Transaction evaluation, case queue | Yes | Yes |
 | Rule pack loaded | 47 rules in `v0.3.6` (2 of them cannot fire yet, see `CHANGELOG.md`), 41 in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
 | Detection | All loaded rules can fire | Not the same as Full (see below) |
-| Evidence report, retro-analysis | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
+| Retro-analysis report page | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
+| Evidence report (`/v1/reports/evidence`) | Yes | Not available |
 | Champion-challenger comparison | Yes | Not available |
 | Manager KPIs, Author tab | Yes | Not available |
 | Fraud feedback (`/v1/feedback`), confirmed-fraud import, payment callback | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
