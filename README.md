@@ -17,7 +17,8 @@ repository.
 
 - `docker-compose.yml` — the minimal install stack: `wowyrd-app` (the risk engine),
   `wowyrd-dashboard` (the evidence/review UI), PostgreSQL, and Redis. No `build:` step — every
-  image is pulled pre-compiled from `ghcr.io/chavychaze`.
+  image is pulled pre-compiled from `ghcr.io/chavychaze`. From `v0.3.6`, the dashboard is in
+  English and Ukrainian. Each analyst picks the language in the dashboard. The default is English.
 - `docker-compose.macos.yml` — an overlay that runs the same stack on macOS / Docker Desktop
   for an evaluation or a demo (bridge networking, eBPF off).
 - `docker-compose.lite.yml` — an overlay for a quick look without a database (embedded SQLite,
@@ -63,7 +64,8 @@ pull`/`up` calls (including version upgrades) don't need it repeated.
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION (see "Versions" below), POSTGRES_PASSWORD, API_KEYS
+# edit .env: set WOWYRD_VERSION (see "Versions" below), POSTGRES_PASSWORD, API_KEYS,
+# DASHBOARD_API_KEYS (a new value, never one from API_KEYS)
 docker compose up -d
 # macOS (evaluation/demo): docker compose -f docker-compose.yml -f docker-compose.macos.yml up -d
 ```
@@ -82,8 +84,8 @@ Explicit versioning only — there is no `latest` tag. Check this repository's R
 the current version, then pin `WOWYRD_VERSION` in `.env` to it and change it deliberately, not
 automatically, when you're ready to upgrade.
 
-**Drop the leading `v`.** A release is tagged `v0.3.5` on the Releases page, but the actual Docker
-image tag is `0.3.5` (no `v`) — set `WOWYRD_VERSION=0.3.5`, not `WOWYRD_VERSION=v0.3.5`, or the
+**Drop the leading `v`.** A release is tagged `v0.3.6` on the Releases page, but the actual Docker
+image tag is `0.3.6` (no `v`) — set `WOWYRD_VERSION=0.3.6`, not `WOWYRD_VERSION=v0.3.6`, or the
 pull will fail with "manifest unknown."
 
 ## Safety defaults
@@ -95,13 +97,13 @@ enforcement, and only change this setting deliberately, after that review.
 ## Pilot install
 
 For a pilot on your own data, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
-(`docker-compose.yml`: PostgreSQL + Redis), because the evidence report, retro-analysis and
-champion-challenger comparison need it. `INSTALL.md` also covers verifying image signatures
-(`cosign verify`) before you pull. `v0.3.4` is signed; `v0.3.5` is not.
+(`docker-compose.yml`: PostgreSQL + Redis), because the champion-challenger comparison and the
+full detection need it. `INSTALL.md` also covers verifying image signatures
+(`cosign verify`) before you pull. `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
 
-`docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look at
-transaction evaluation and the case queue only. It has no evidence report, so it is not a pilot
-profile. `INSTALL.md` lists every feature it leaves out.
+`docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look. Its
+detection is not the same as Full, so it is not a pilot profile. `INSTALL.md` lists every feature
+it leaves out.
 
 ## Support
 

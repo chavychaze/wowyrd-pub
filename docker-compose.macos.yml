@@ -9,7 +9,7 @@
 ## with the same Postgres + Redis stack as the Full profile on Linux.
 ##
 ## Usage:
-##   cp .env.example .env   # fill in WOWYRD_VERSION, POSTGRES_PASSWORD, API_KEYS
+##   cp .env.example .env   # fill in WOWYRD_VERSION, POSTGRES_PASSWORD, API_KEYS, DASHBOARD_API_KEYS
 ##   docker compose -f docker-compose.yml -f docker-compose.macos.yml up -d
 ##
 ## Verify the override took effect before trusting it (it relies on the `!reset`/`!override`
@@ -62,4 +62,5 @@ services:
     environment:
       - VITE_API_URL=http://${HOST_IP:-localhost}:${WOWYRD_APP_PORT:-8090}
       - VITE_WS_URL=ws://${HOST_IP:-localhost}:${WOWYRD_APP_PORT:-8090}/v1/ws/events
-      - VITE_API_KEY=${API_KEYS:?set API_KEYS in .env}
+      # The dashboard's read-only key, as in docker-compose.yml. Never API_KEYS here.
+      - VITE_API_KEY=${DASHBOARD_API_KEYS:?set DASHBOARD_API_KEYS in .env}

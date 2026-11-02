@@ -15,16 +15,17 @@ defers to this file. This file is the source of truth.
 | Use it for | A pilot on your own data | A quick look only |
 | Containers | 4: `wowyrd-app`, `wowyrd-dashboard`, `wowyrd-postgres`, `wowyrd-redis` | 2: `wowyrd-app`, `wowyrd-dashboard` |
 | Transaction evaluation, case queue | Yes | Yes |
-| Rule pack loaded | 41 rules in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
+| Rule pack loaded | 47 rules in `v0.3.6` (2 of them cannot fire yet, see `CHANGELOG.md`), 41 in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
 | Detection | All loaded rules can fire | Not the same as Full (see below) |
-| Evidence report, retro-analysis | Yes | Not available |
+| Evidence report, retro-analysis | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
 | Champion-challenger comparison | Yes | Not available |
 | Manager KPIs, Author tab | Yes | Not available |
-| Fraud feedback (`/v1/feedback`), confirmed-fraud import, payment callback | Yes | Not available |
-| Step-up, webhooks, action gates | Yes | Not available |
+| Fraud feedback (`/v1/feedback`), confirmed-fraud import, payment callback | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
+| Step-up, webhooks, action gates, score-threshold changes | Yes | Not available |
 | Personal data anonymization after the retention period | Yes, with `RETENTION_HASH_KEY` set (step 4) | Not available: Lite keeps all personal data |
 
-A pilot needs the evidence report, so a pilot uses the Full profile. Steps 1–6 below install it.
+A pilot uses the Full profile, because on Lite detection is not the same as Full and the
+champion-challenger comparison is not available. Steps 1–6 below install it.
 The Lite profile returns a "not available in the embedded lite profile" error for every feature
 marked "Not available". Rules that need dormancy or threat-indicator history (e.g. dormant-account
 wake, known-bad indicator) may not fire on Lite, so detection is not the same as Full, even though
@@ -36,7 +37,7 @@ the same rule pack is loaded. Step 7 covers the Lite profile.
 flowchart TD
     A[Get a read:packages token from your WoWyrd contact] --> B[docker login ghcr.io]
     B --> C{Version to install}
-    C -->|0.3.4| D[cosign verify both images]
+    C -->|0.3.6 or 0.3.4| D[cosign verify both images]
     C -->|0.3.5| E[Compare digests with the Releases page]
     D --> F[cp .env.example .env<br/>set WOWYRD_VERSION, POSTGRES_PASSWORD,<br/>API_KEYS, RETENTION_HASH_KEY]
     E --> F
@@ -97,7 +98,7 @@ On a machine with registry access (log in as above first, and do step 3 there):
 
 1. Pull the four images:
    ```bash
-   V=0.3.5
+   V=0.3.6
    docker pull ghcr.io/chavychaze/wowyrd-app:$V
    docker pull ghcr.io/chavychaze/wowyrd-dashboard:$V
    docker pull postgres:15-alpine
@@ -134,35 +135,45 @@ On the install host:
    this host. The image ID is the check here.
 3. Continue at step 4. Compose uses the loaded images and does not try to pull them.
 
-The `0.3.5` images are built for `linux/amd64` only.
+The `0.3.6` and `0.3.5` images are built for `linux/amd64` only. From `v0.3.6`, the Compose files
+ask for `linux/amd64`, so an arm64 host (for example a Mac with Apple silicon) runs the images
+under emulation.
 
 ## 3. Verify the images are genuinely signed by WoWyrd (recommended before first pull)
 
-`v0.3.4` is signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/) using GitHub
-Actions' own keyless/OIDC identity (Sigstore's public Fulcio/Rekor infrastructure) — no shared
-signing key exists to leak or need rotating.
+```mermaid
+flowchart TD
+    A{Version} -->|0.3.6 or 0.3.4| B[cosign verify both images]
+    A -->|0.3.5| C[Compare digests with the Releases page]
+    B --> D{Result}
+    D -->|Verification passes| E[Pull by the same tag]
+    D -->|Verification fails| F[Do not install.<br/>Contact WoWyrd]
+```
+
+`v0.3.6` and `v0.3.4` are signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/). The
+signature comes from the WoWyrd release workflow on GitHub Actions (keyless signing, with
+Sigstore's public Fulcio and Rekor services). No signing key is stored, so no key can leak.
 
 **`v0.3.5` is not signed.** Its images were built and pushed manually while the signed release
 pipeline was unavailable. `cosign verify` fails against `0.3.5`, and that failure says nothing
 about the images' integrity either way. Compare the image digests on the `v0.3.5` Releases page
-entry instead. A future release will restore signing. Releases before `v0.3.4` are unsigned too.
+entry instead. Releases before `v0.3.4` are unsigned too.
 
-To verify `0.3.4`, install cosign
-([instructions](https://docs.sigstore.dev/cosign/system_config/installation/)), then:
-
-```bash
-cosign verify \
-  --certificate-identity-regexp "^https://github.com/chavychaze/.*$" \
-  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-  ghcr.io/chavychaze/wowyrd-app:0.3.4
-
-cosign verify \
-  --certificate-identity-regexp "^https://github.com/chavychaze/.*$" \
-  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-  ghcr.io/chavychaze/wowyrd-dashboard:0.3.4
-```
-
-The image digests for each release are on its Releases page entry.
+1. Install cosign ([instructions](https://docs.sigstore.dev/cosign/system_config/installation/)).
+2. Verify both images. Set `V` to the version that you install:
+   ```bash
+   V=0.3.6
+   for IMAGE in wowyrd-app wowyrd-dashboard; do
+     cosign verify \
+       --certificate-identity-regexp "^https://github.com/chavychaze/.*$" \
+       --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+       ghcr.io/chavychaze/$IMAGE:$V
+   done
+   ```
+3. Each command must succeed and print `The cosign claims were validated`. If a command fails, do
+   not install. Contact WoWyrd.
+4. Compare the `docker-manifest-digest` value in the output with the digest on the Releases page
+   entry for that version.
 
 A Software Bill of Materials (CycloneDX format) for each image — `wowyrd-app.cdx.json` and
 `bom.json` respectively — is attached to each release on this repo's Releases page for a
@@ -172,9 +183,9 @@ vendor-security review.
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.3.5 (drop the leading "v" — see README.md's
-# "Versions" section), POSTGRES_PASSWORD, API_KEYS and RETENTION_HASH_KEY (see "Personal
-# data anonymization" below).
+# edit .env: set WOWYRD_VERSION=0.3.6 (drop the leading "v" — see README.md's
+# "Versions" section), POSTGRES_PASSWORD, API_KEYS, DASHBOARD_API_KEYS (see "Limit who can open
+# the dashboard and the API" below) and RETENTION_HASH_KEY (see "Personal data anonymization").
 # On an internet-facing host, also add POSTGRES_BIND=127.0.0.1 and REDIS_BIND=127.0.0.1, so the
 # database and cache ports are not exposed (both default to 0.0.0.0).
 
@@ -189,19 +200,42 @@ docker compose ps   # expect wowyrd-app, wowyrd-dashboard, wowyrd-postgres, wowy
 
 ### Limit who can open the dashboard and the API (set it before you send real data)
 
-The dashboard web page contains the value of `API_KEYS`. Anyone who can open the page can read
-the key. With the key, they can call every API endpoint, including the endpoints that block,
-unblock and evaluate. This applies to the Full and Lite profiles.
+The dashboard web page contains the value of `DASHBOARD_API_KEYS`. Anyone who can open the page
+can read the key. The app accepts this key only for reads, but the reads include your cases and
+their personal data. Changes (block, unblock, reviews) need an operator key. This applies to the
+Full and Lite profiles.
 
 By default, the dashboard (port 3000) and `wowyrd-app` (port 8090) accept connections on all
 network interfaces. Do these steps:
 
-1. Put only one key in `API_KEYS`. The dashboard page contains all the keys in this value. Your
-   integration servers use the same key.
+1. Set `DASHBOARD_API_KEYS` to a new value. Never use a value from `API_KEYS`.
 2. Allow ports 3000 and 8090 only from your analysts' network and from your integration servers.
    Use the host firewall or a VPN. In the Full profile, `wowyrd-app` uses the host network, so
    the firewall is the only way to limit port 8090.
 3. Do not open ports 3000 and 8090 to the internet.
+
+### Create your operators
+
+An operator key lets one person make changes: block, unblock, review a case or a rule, and
+approve rule-weight changes and action gates. The dashboard asks for this key when a person makes
+a change. A new install has no active operator. Until you create one, the app logs this warning
+at start: "no active operator exists -- calibration, action-gates, manual block/unblock, and
+case/soundness review are all unusable until one is provisioned".
+
+1. Create one operator for each person. The command prints the key one time only:
+   ```bash
+   docker compose exec wowyrd-app operator_tool create --name <name>
+   ```
+   By default, one operator can propose and approve their own rule-weight change. For dual
+   control, set `REQUIRED_APPROVALS_DEFAULT=2`. Then a proposal needs the approval of a
+   different operator.
+2. Give the key to that person in a secure way. The app stores only a hash of the key.
+3. To see the operators, run `docker compose exec wowyrd-app operator_tool list`.
+4. To turn off a key, run `docker compose exec wowyrd-app operator_tool deactivate --id <id>`.
+   To replace a key, turn off the old one and create a new one.
+
+On the Lite profile, use `docker compose -f docker-compose.yml -f docker-compose.lite.yml exec`
+in place of `docker compose exec`.
 
 ### Personal data anonymization (set it before you send real data)
 
@@ -212,6 +246,9 @@ values after 365 days). It does this only when `RETENTION_HASH_KEY` is set. In `
 
 Without the key, the app keeps all personal data. It does not stop and does not show an error.
 Once a day, it logs "RETENTION_HASH_KEY not set — retention anonymization pass skipped entirely".
+From `v0.3.6`, `GET /health` shows it too: `retention.active` is `false`, and
+`retention.inactive_reason` says why. From `v0.3.6`, the pass also anonymizes imported
+champion-challenger data.
 
 To turn anonymization on:
 
@@ -220,23 +257,32 @@ To turn anonymization on:
 3. Do not change the key later. After a change, customer IDs anonymized with the old key do not
    match new ones.
 4. Restart `wowyrd-app` with the same `docker compose ... up -d` command that you used to start it.
+5. From `v0.3.6`: `curl http://localhost:8090/health` must show `"retention"` with `"active": true`.
 
 The Lite profile does not anonymize personal data. It keeps all of it, with or without the key.
 
 ### Optional: the datacenter ASN list
 
-No image contains a datacenter ASN list. Without one, the `datacenter_asn` rule is off and never
-fires. At start, the app logs "datacenter ASN list not loaded — datacenter_asn disabled". The
-`datacenter_ip` rule does not need this list.
+The `datacenter_asn` rule uses only the `client_asn` field (a number) that you send with each
+transaction to `POST /v1/evaluate`. It fires when that ASN is on the datacenter ASN list. The
+`datacenter_ip` rule does not use this list.
 
-To turn the rule on:
+From `v0.3.6`, the app contains a default list of 24 cloud and hosting ASNs. `GET /health` shows
+which list the app uses: `datacenter_asn.source` is `bundled` or `operator`, and
+`datacenter_asn.count` is the number of ASNs.
+
+To use your own list:
 
 1. Create `config/intel/datacenter-asns.txt`.
 2. Write one ASN per line, as a number (for example `16509`). The app ignores blank lines and
    lines that start with `#`.
-3. Send `client_asn` (a number) with each transaction to `POST /v1/evaluate`. The rule uses only
-   this field.
-4. Restart `wowyrd-app`. The app reads the list only at start.
+3. Restart `wowyrd-app`. The app reads the list only at start.
+
+If this file exists, the app uses only this file, not the default list. To turn the rule off, make
+the file empty: `GET /health` then shows `operator` and `0`.
+
+In `v0.3.5`, no image contains a list. Without your file, the rule is off, and the app logs
+"datacenter ASN list not loaded — datacenter_asn disabled" at start.
 
 ### macOS / Docker Desktop (evaluation or demo only)
 
@@ -272,12 +318,12 @@ feedback is what keeps this runbook honest.
 
 ## 7. Quick look without a database (Lite profile — not for a pilot)
 
-The Lite profile runs transaction evaluation and the case queue only. It has no evidence report,
-so it cannot deliver a pilot's results — see "Which profile to use" above.
+The Lite profile is for a quick look. Its detection is not the same as Full, and it leaves out
+the features marked "Not available" in "Which profile to use" above. So it is not a pilot profile.
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.3.5, API_KEYS, and POSTGRES_PASSWORD to any placeholder value
+# edit .env: set WOWYRD_VERSION=0.3.6, API_KEYS, DASHBOARD_API_KEYS, and POSTGRES_PASSWORD to any placeholder value
 # (this profile never connects to Postgres, but Compose still validates the variable exists —
 # see docker-compose.lite.yml's own comment on why).
 
@@ -293,7 +339,7 @@ docker compose -f docker-compose.yml -f docker-compose.lite.yml config --service
 docker ps   # expect exactly wowyrd-app + wowyrd-dashboard
 ```
 
-The dashboard page contains the API key here too. Do the steps in step 4, "Limit who can open
+The dashboard page contains `DASHBOARD_API_KEYS` here too. Do the steps in step 4, "Limit who can open
 the dashboard and the API". In Lite, `WOWYRD_APP_PORT` sets the app port.
 
 ---
