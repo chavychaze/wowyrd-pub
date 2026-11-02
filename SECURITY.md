@@ -1,19 +1,17 @@
-<!-- TODO: switch the address to security@wowyrd.net once that mailbox or alias exists. -->
-
 # Security policy
 
 ## Report a vulnerability
 
 ```mermaid
 flowchart TD
-    A[You find a vulnerability] --> B[Email vitaliy@wowyrd.net<br/>not a public issue]
+    A[You find a vulnerability] --> B[Email security@wowyrd.net<br/>not a public issue]
     B --> C[WoWyrd acknowledges<br/>target: 3 business days]
     C --> D[WoWyrd sends a first assessment<br/>target: 10 business days]
     D --> E[WoWyrd and you agree on<br/>the fix and the disclosure date]
     E --> F[The fix ships in a new release<br/>CHANGELOG.md names it]
 ```
 
-1. Email **vitaliy@wowyrd.net**. Start the subject with `Security:`.
+1. Email **security@wowyrd.net**. Start the subject with `Security:`.
 2. Do not open a public GitHub issue for a vulnerability.
 3. Include:
    - the WoWyrd version (`WOWYRD_VERSION`);
