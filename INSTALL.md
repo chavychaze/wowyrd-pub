@@ -285,6 +285,42 @@ the file empty: `GET /health` then shows `operator` and `0`.
 In `v0.3.5`, no image contains a list. Without your file, the rule is off, and the app logs
 "datacenter ASN list not loaded — datacenter_asn disabled" at start.
 
+### Optional: the licence file
+
+```mermaid
+flowchart TD
+    A[App reads LICENSE_FILE<br/>at start and on each GET /v1/license-status] --> B{File found?}
+    B -->|No| U[Unlicensed]
+    B -->|Yes| C{Signature correct?<br/>checked offline with the key in the image}
+    C -->|No| U
+    C -->|Yes| D{Expiry date passed?}
+    D -->|Yes| E[Licence expired]
+    D -->|No| L[Licensed]
+    U --> S[Scoring works the same in every state]
+    E --> S
+    L --> S
+```
+
+The app checks the licence file offline. It does not contact WoWyrd for the check. The image
+contains only the public key that verifies the signature.
+
+1. Put the file that WoWyrd gives you at `config/intel/license.json`. The app reads it as
+   `/etc/wowyrd/license.json`. To use a different path, set `LICENSE_FILE` in `.env`.
+2. You do not need to restart the app. It reads the file again on each `GET /v1/license-status`.
+3. Check the state: `GET /v1/license-status`, or the licence label in the dashboard header.
+
+| State | Start-up log | Dashboard label |
+|---|---|---|
+| No file, or a file that does not verify | `running unlicensed` | "No license file found" |
+| Signature correct, expiry date passed | `license expired` | "License expired" and the date |
+| Signature correct, not expired | `licensed` | "Licensed to" and your name. From 14 days before the expiry date: "License expires" and the date |
+
+The licence state never stops scoring, and the app starts without a licence file. An expired
+licence scores in the same way as a valid one.
+
+`v0.3.6` verifies with a new key. A licence file that verified on `v0.3.5` does not verify on
+`v0.3.6`: the dashboard shows "No license file found". Ask WoWyrd for a new file.
+
 ### macOS / Docker Desktop (evaluation or demo only)
 
 On Docker Desktop, the Full profile's host networking leaves `wowyrd-app`'s port 8090 unreachable
