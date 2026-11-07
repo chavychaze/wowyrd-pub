@@ -10,7 +10,10 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-No changes since `v0.3.6`.
+- `INSTALL.md`: an empty `NETWORK_INTERFACE` does not turn eBPF off. The sensor uses the first
+  network interface that is not loopback. The text said PostgreSQL-only mode. Docs fix only.
+- `INSTALL.md` and `README.md`: eBPF needs kernel 5.17 or newer, not 5.15. Docs fix only.
+- `SECURITY.md`: report a vulnerability to security@wowyrd.net.
 
 ## v0.3.6 — 2026-11-02
 
