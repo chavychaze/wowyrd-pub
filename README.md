@@ -32,8 +32,10 @@ repository.
 ## Prerequisites
 
 - Docker + Docker Compose.
-- A Linux host for this stack (macOS: evaluation or demo only, see below). Kernel 5.15+ only if
-  you want optional eBPF-based enforcement later. On an older kernel, WoWyrd runs in
+- A Linux host for this stack (macOS: evaluation or demo only, see below). Kernel 5.17 or newer
+  only if you want optional eBPF-based enforcement later (the TC filter uses `bpf_loop`, added
+  in kernel 5.17 — not yet tested on a kernel older than 6.x). On Ubuntu 22.04, the GA kernel
+  (5.15) is too old for this — use the HWE kernel. On an older kernel, WoWyrd runs in
   PostgreSQL-only mode automatically — this is a fully supported mode for a first observe-only
   pilot, not a degraded fallback to work around.
 - macOS / Docker Desktop: this stack's host networking leaves the API (port 8090) unreachable

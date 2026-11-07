@@ -57,8 +57,10 @@ The diagram shows steps 1–5. Step 7 (Lite) is a separate quick look, not a pil
 
 - Docker + Docker Compose.
 - A Linux host for a pilot. The Full profile runs `wowyrd-app` with host networking and
-  privileged mode, for optional eBPF enforcement. eBPF is optional: without it (on a kernel older
-  than 5.15, or with `NETWORK_INTERFACE` unset) WoWyrd runs in PostgreSQL-only mode.
+  privileged mode, for optional eBPF enforcement. eBPF needs kernel 5.17 or newer (the TC filter
+  uses `bpf_loop`, added in 5.17 — not yet tested on a kernel older than 6.x; on Ubuntu 22.04,
+  the GA kernel, 5.15, is too old — use the HWE kernel). eBPF is optional: without it (on an
+  older kernel, or with `NETWORK_INTERFACE` unset) WoWyrd runs in PostgreSQL-only mode.
 - macOS is for evaluation or a demo only — see "macOS / Docker Desktop" at the end of step 4.
   Use the macOS overlay to evaluate WoWyrd on a Mac. Run a pilot on your own data on a Linux
   server.
