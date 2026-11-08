@@ -69,14 +69,20 @@ services:
       - API_KEYS=${API_KEYS:?set API_KEYS in .env}
       - DASHBOARD_API_KEYS=${DASHBOARD_API_KEYS:?set DASHBOARD_API_KEYS in .env}
       - ENFORCEMENT_MODE=${ENFORCEMENT_MODE:-observe}
+      # No eBPF on Lite. From 0.3.9 the entrypoint tries the loader unless this is true.
+      - WOWYRD_EBPF_DISABLE=true
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
       - RETENTION_HASH_KEY=${RETENTION_HASH_KEY:-}
       - RETENTION_ANONYMIZE_AFTER_DAYS=${RETENTION_ANONYMIZE_AFTER_DAYS:-180}
+      - RETENTION_BLOCK_REDACT_AFTER_DAYS=${RETENTION_BLOCK_REDACT_AFTER_DAYS:-365}
       - LICENSE_FILE=${LICENSE_FILE:-/etc/wowyrd/license.json}
       - INTEL_BUNDLE_URL=${INTEL_BUNDLE_URL:-}
       - WOWYRD_OFFLINE=${WOWYRD_OFFLINE:-false}
       - REQUIRED_APPROVALS_DEFAULT=${REQUIRED_APPROVALS_DEFAULT:-1}
+      # Days before an unapproved proposal expires (0.3.9 or later). Empty = 7. A value that is
+      # not a whole number of 1 or more stops the app at start.
+      - PROPOSAL_TTL_DAYS=${PROPOSAL_TTL_DAYS:-7}
     # Same list-concatenation issue as `environment:` above — `!override` needed here too, or
     # the base file's `/sys/fs/bpf` bind mount (irrelevant without eBPF/privileged mode) stays
     # in the merged config alongside this. Confirmed via the same `docker compose config` check.

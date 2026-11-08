@@ -42,9 +42,10 @@ services:
       - POSTGRES_DSN=postgres://wowyrd:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/wowyrd_app
       - REDIS_ADDR=redis:6379
       - HTTP_ADDR=0.0.0.0:8090
-      # Empty on purpose: the image's entrypoint starts the eBPF loader only when this is
-      # non-empty, so the app stays cleanly in PostgreSQL-only mode.
+      # eBPF off on a Mac. From 0.3.9 the entrypoint tries the loader by default;
+      # WOWYRD_EBPF_DISABLE=true stops that. BPF_OBJECT_PATH= does the same up to 0.3.6.
       - BPF_OBJECT_PATH=
+      - WOWYRD_EBPF_DISABLE=true
       - NETWORK_INTERFACE=
       - IP2LOCATION_DB=/etc/wowyrd/ip2location.BIN
       - GEOIP_ASN_DB=/etc/wowyrd/GeoLite2-ASN.mmdb

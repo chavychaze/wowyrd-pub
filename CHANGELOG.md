@@ -10,10 +10,127 @@ steps" and "Installing this version".
 
 ## Unreleased
 
+No changes since `v0.3.9`.
+
+## v0.3.9 — 2026-11-08
+
+> **Signed, multi-arch.** `v0.3.9` images are cosign-signed and built for `linux/amd64` and
+> `linux/arm64`. See `INSTALL.md`, step 3.
+
+> `v0.3.7` and `v0.3.8` were not published on this repository. `v0.3.9` contains their changes.
+
+### What's new
+
+- **Images for `linux/amd64` and `linux/arm64`.** Each image tag is one signed multi-arch index.
+  Docker pulls the image for the host's own platform. An arm64 host (for example a Mac with Apple
+  silicon, or an arm64 Linux server) no longer runs the app under emulation.
+- **Evidence report and manager KPIs on the Lite profile.** `GET /v1/reports/evidence` and
+  `GET /v1/reports/manager-kpis` work on Lite. In `v0.3.6` they returned HTTP 500 there.
+- **47 rules** in the rule pack, on the Full and Lite profiles. 2 of them use the network sensor
+  (XDP): they fire only on the Full profile on a Linux host where the sensor attaches.
+- **The network sensor is in the image.** On the Full profile on Linux, the app now starts the
+  kernel sensor by default when the host allows it: TC and, new in this release, XDP. If the host
+  does not allow it, the app runs in PostgreSQL-only mode, as before. `GET /health` gives the
+  reason in `kernel_sensor.unavailable_reason`. The dashboard shows it on the Performance tab.
+- **New setting `WOWYRD_EBPF_DISABLE`.** Set it to `true` to never start the sensor. The macOS
+  and Lite overlays set it to `true`.
+- **Managed Tor exit list in the kernel.** The sensor can check incoming connections against the
+  public Tor exit list. The app updates the list on its normal schedule. The list starts in
+  `observe` mode: it records hits and blocks nothing. To change it to `enforce`, an operator
+  proposes the change on the action gate `xdp_managed_tor_enforce` and approves it
+  (`POST /v1/action-gates/xdp_managed_tor_enforce/proposals`, then
+  `POST /v1/action-gates/proposals/{proposal_id}/approve`). This gate needs one approval, also
+  when `REQUIRED_APPROVALS_DEFAULT` is `2`. The same operator can propose and approve. The app
+  checks the mode that the kernel reports after each change.
+- **Emergency switch.** `POST /v1/emergency-bypass` with `{"enable": true, "reason": "..."}`
+  makes the kernel sensor let all traffic through at once. `{"enable": false}` turns it off.
+  It needs an operator key or session, and no second approval. Each change goes to a separate
+  audit log (`GET /v1/emergency-bypass/audit-log`, WoWyrd operators only). The response gives the
+  state that the kernel reports.
+- **Sensor status for operators.** `GET /v1/kernel-sensor/status` gives `attached` and the Tor
+  list mode. `GET /v1/emergency-bypass` gives the switch state. Both need an operator key or
+  session. `GET /health` does not show these states. `attached`, and `kernel_sensor.attached` in
+  `GET /health`, say whether the loader really attached a sensor program to the network
+  interface.
+
+- **Proposals expire.** A proposal that nobody approves or rejects now expires after
+  `PROPOSAL_TTL_DAYS` days (new setting, default `7`). This applies to rule calibration, action
+  gate, action mapping and step-up threshold proposals. On the Lite profile, it applies to rule
+  calibration proposals. An expired proposal cannot be approved or rejected. To make the change,
+  propose it again, and link the new proposal to the expired one with `reproposes_id`.
+  On the Full profile, a daily job expires them, and `GET /health` shows it in
+  `proposal_expiry_sweep`. On the Lite profile, the deadline is checked when an operator approves
+  or rejects.
+
+**Known limit:** `kernel_sensor.attached` is `true` when XDP or TC is attached, and it then gives
+no reason. On a kernel older than 5.17, the TC filter does not load, but XDP can still attach. So
+`attached: true` does not prove that the TC filter is loaded. Use kernel 5.17 or newer.
+
+### Breaking changes
+
+- **The sensor control socket moved** from `/var/run/` to `/var/run/wowyrd/loader.sock`. The
+  directory must be mode `0700` and owned by root, and the socket is `0600`. If the directory
+  exists with other settings, the sensor does not start, and the app runs in PostgreSQL-only
+  mode. If you set `LOADER_SOCKET` yourself, or you mount `/var/run` from the host or another
+  container, change it before the upgrade. The new `docker-compose.yml` sets the new path.
+- **The sensor starts by default.** Before, it started only when `BPF_OBJECT_PATH` was set.
+  An empty `BPF_OBJECT_PATH` no longer stops it. Use `WOWYRD_EBPF_DISABLE=true`.
+
+### Upgrade safety
+
+- New database migrations: 11 on the Full profile (PostgreSQL), 9 on the Lite profile (SQLite).
+  The app applies them at start.
+- Migrations only go forward. To roll back, restore the backup that you made before the upgrade
+  (see `OPERATIONS.md`).
+- The Tor list starts in `observe` mode. The upgrade blocks nothing by itself.
+- No pending proposal expires at the upgrade. A proposal that exists before the upgrade gets a
+  deadline of 7 days after it was proposed, or 7 days after the upgrade, whichever is later.
+  `PROPOSAL_TTL_DAYS` applies to new proposals only. We recommend that you approve or reject
+  pending proposals before you upgrade.
+- The TC filter needs kernel 5.17 or newer. On an older kernel, the XDP sensor can attach
+  without the TC filter (we saw this on kernel 5.15). See "Known limit". Use kernel 5.17 or newer.
+
+### Migration steps
+
+1. If you set `LOADER_SOCKET`, or mount `/var/run`, change it first (see "Breaking changes").
+2. Get the new `docker-compose.yml`, `docker-compose.macos.yml` and `docker-compose.lite.yml` from
+   this release.
+3. Optional: add `WOWYRD_EBPF_DISABLE=true` to `.env` to keep PostgreSQL-only mode on the Full
+   profile.
+4. Optional: set `PROPOSAL_TTL_DAYS` in `.env`, as a whole number of 1 or more. Any other value
+   (for example `0` or `abc`) stops the app at start.
+5. Optional: verify the images (`INSTALL.md`, step 3).
+6. Follow "Upgrade" in `OPERATIONS.md`: back up, set `WOWYRD_VERSION=0.3.9`, pull, start.
+7. Check `GET /health`: `kernel_sensor` says if the sensor started, or why it did not.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.3.9`, `ghcr.io/chavychaze/wowyrd-dashboard:0.3.9` (no
+leading `v` on the image tag). See `INSTALL.md` for the full install.
+
+Image digests (multi-arch index; each covers `linux/amd64` and `linux/arm64`):
+
+- `ghcr.io/chavychaze/wowyrd-app:0.3.9` — `sha256:5827c5c70331d4aa74cc144d158f2514c0dce01277e4e6e7dda486a1b76507de`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.3.9` — `sha256:ab9bee2751dcb509845de62918b7e5d9288a584f297d386e3a77471c681b34b5`
+
+Both images are cosign-signed (keyless) by the release workflow of tag `v0.3.9`. `INSTALL.md`,
+step 3, has the verification command. The index and each platform image are signed.
+
+Changes to this repository's own files in this release:
+
+- `docker-compose.yml`: `LOADER_SOCKET` is `/var/run/wowyrd/loader.sock`. New pass-through
+  settings `WOWYRD_EBPF_DISABLE`, `PROPOSAL_TTL_DAYS` and `RETENTION_BLOCK_REDACT_AFTER_DAYS`.
+- `docker-compose.macos.yml` and `docker-compose.lite.yml` set `WOWYRD_EBPF_DISABLE=true`.
+  `docker-compose.lite.yml` also passes `PROPOSAL_TTL_DAYS` and
+  `RETENTION_BLOCK_REDACT_AFTER_DAYS`.
 - `INSTALL.md`: an empty `NETWORK_INTERFACE` does not turn eBPF off. The sensor uses the first
   network interface that is not loopback. The text said PostgreSQL-only mode. Docs fix only.
 - `INSTALL.md` and `README.md`: eBPF needs kernel 5.17 or newer, not 5.15. Docs fix only.
 - `SECURITY.md`: report a vulnerability to security@wowyrd.net.
+- `docker-compose.yml` no longer sets `platform: linux/amd64`. Docker pulls the image for the
+  host's own platform.
+- `.env.example` has `WOWYRD_EBPF_DISABLE`, `PROPOSAL_TTL_DAYS` and
+  `RETENTION_BLOCK_REDACT_AFTER_DAYS`.
 
 ## v0.3.6 — 2026-11-02
 

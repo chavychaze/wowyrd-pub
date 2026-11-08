@@ -15,9 +15,6 @@ services:
 
   wowyrd-app:
     image: ghcr.io/chavychaze/wowyrd-app:${WOWYRD_VERSION:?set WOWYRD_VERSION in .env — see README.md}
-    # The images are built for linux/amd64 only. This line makes an arm64 host (for example a Mac
-    # with Apple silicon) pull the amd64 image and run it under emulation, instead of failing.
-    platform: linux/amd64
     container_name: wowyrd-app
     restart: unless-stopped
     # eBPF requirements on Linux (gracefully degrades to PostgreSQL-only mode if unavailable —
@@ -37,7 +34,9 @@ services:
       - REDIS_ADDR=localhost:6379
       - HTTP_ADDR=0.0.0.0:8090
       - BPF_FS_PATH=/sys/fs/bpf/wowyrd
-      - LOADER_SOCKET=/var/run/wowyrd-app-loader.sock
+      # From 0.3.9 the loader keeps its control socket in its own root-only directory
+      # (0700, socket 0600) and refuses to start if that directory is shared.
+      - LOADER_SOCKET=/var/run/wowyrd/loader.sock
       - IP2LOCATION_DB=/etc/wowyrd/ip2location.BIN
       - GEOIP_ASN_DB=/etc/wowyrd/GeoLite2-ASN.mmdb
       - GEOIP_COUNTRY_DB=/etc/wowyrd/GeoLite2-Country.mmdb
@@ -50,6 +49,8 @@ services:
       - ENFORCEMENT_MODE=${ENFORCEMENT_MODE:-observe}
       - BPF_OBJECT_PATH=/usr/local/share/wowyrd/tc.bpf.o
       - NETWORK_INTERFACE=${NETWORK_INTERFACE:-}
+      # true = never start the eBPF loader (PostgreSQL-only mode), 0.3.9 or later.
+      - WOWYRD_EBPF_DISABLE=${WOWYRD_EBPF_DISABLE:-false}
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
       # PII-anonymization pass over risk_assessments — fail-safe by design: an unset key
@@ -57,12 +58,16 @@ services:
       # real value before relying on this for any deployment retaining real customer data.
       - RETENTION_HASH_KEY=${RETENTION_HASH_KEY:-}
       - RETENTION_ANONYMIZE_AFTER_DAYS=${RETENTION_ANONYMIZE_AFTER_DAYS:-180}
+      - RETENTION_BLOCK_REDACT_AFTER_DAYS=${RETENTION_BLOCK_REDACT_AFTER_DAYS:-365}
       - LICENSE_FILE=${LICENSE_FILE:-/etc/wowyrd/license.json}
       - INTEL_BUNDLE_URL=${INTEL_BUNDLE_URL:-}
       # true = no threat-intel downloads at all (0.3.6+). See NETWORK.md.
       - WOWYRD_OFFLINE=${WOWYRD_OFFLINE:-false}
       # 1 or 2 approvers for every maker-checker change (0.3.6+).
       - REQUIRED_APPROVALS_DEFAULT=${REQUIRED_APPROVALS_DEFAULT:-1}
+      # Days before an unapproved proposal expires (0.3.9 or later). Empty = 7. A value that is
+      # not a whole number of 1 or more stops the app at start.
+      - PROPOSAL_TTL_DAYS=${PROPOSAL_TTL_DAYS:-7}
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,7 +82,6 @@ services:
 
   wowyrd-dashboard:
     image: ghcr.io/chavychaze/wowyrd-dashboard:${WOWYRD_VERSION:?set WOWYRD_VERSION in .env}
-    platform: linux/amd64
     container_name: wowyrd-dashboard
     restart: unless-stopped
     ports:
