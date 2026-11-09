@@ -10,7 +10,117 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-No changes since `v0.3.9`.
+No changes since `v0.3.10`.
+
+## v0.3.10 — 2026-11-09
+
+> **Signed, multi-arch.** `v0.3.10` images are cosign-signed and built for `linux/amd64` and
+> `linux/arm64`. See `INSTALL.md`, step 3.
+
+### What's new
+
+- **Your own kernel lists.** An operator can create up to 4 named lists of IPv4 addresses and
+  ranges: paste or upload them in the dashboard, or use `/v1/kernel-lists`. The app reports the
+  result for each line. A new list starts in `observe` mode: it records hits and blocks nothing.
+  It changes to `enforce` only after an operator's approval (`REQUIRED_APPROVALS_DEFAULT`). A list goes back to
+  `observe` 30 days after its last upload, unless you set another limit (1 to 3650 days) or no
+  limit when you create it. Each change goes to an audit log (`GET /v1/kernel-lists/audit-log`,
+  WoWyrd operators only). Client lists need the network sensor (Full profile on Linux). Without
+  it, a change returns HTTP 503 and nothing changes.
+- **A second managed list: hijacked netblocks (IPv4).** Each install downloads this public list
+  itself, at most once a day. The list starts in `observe` mode. To change it to `enforce`, an operator
+  proposes and approves the action gate `xdp_managed_hijacked_netblock_enforce`. Like the Tor
+  gate, it needs one approval, and the same operator can propose and approve.
+  `GET /v1/kernel-sensor/status` gives `managed_hijacked_netblock_mode`. This is a new outbound
+  connection: see `NETWORK.md`.
+- **The strictest mode wins.** Each list (Tor, hijacked netblocks, your own lists) has its own
+  kernel map. If an address is on two lists, the sensor uses `enforce` when either list is in
+  `enforce` mode. The emergency switch still lets all traffic through, whatever the lists say. The sensor refuses any
+  range wider than `/8`.
+- **A list that is too old goes back to `observe`.** If a managed list was not updated for
+  `MANAGED_TOR_MAX_LIST_AGE_HOURS` (default 72) or `MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS`
+  (default 168) hours, it goes back to `observe`. Its entries stay in place. A fresh list
+  restores the approved mode. Each mode change goes to a new hash-chained audit log
+  (`GET /v1/kernel-sensor/mode-audit-log`, WoWyrd operators only). In `GET /health`, `feed_health` shows
+  `past_enforcement_limit`. If you approve `enforce` for a list that is already too old, it stays
+  in `observe`, and the app tells you why.
+- **XDP on several network interfaces.** `NETWORK_INTERFACE` accepts a comma-separated list of up
+  to 8 interfaces. All interfaces use the same lists, so a list update, a mode change or the
+  emergency switch applies to all of them. If one name is wrong, the app reports it and the other
+  interfaces still attach. `GET /v1/kernel-sensor/status` lists each interface and its mode.
+- **`GET /health` shows each sensor program.** New fields `xdp_attached` and `tc_attached`. The
+  dashboard says when header inspection (the TC filter) is not running. This replaces the
+  `v0.3.9` known limit: `kernel_sensor.attached` alone did not show a missing TC filter.
+- **`ENFORCEMENT_MODE` applies to the rule engine only.** The kernel lists do not follow it: each
+  list has its own mode. `GET /v1/kernel-sensor/status` now also gives
+  `rule_engine_enforcement_mode`.
+- **Dashboard:** the action-gate tables show plain names for the two kernel list gates.
+- **Release pipeline:** it checks that it can sign before it pushes any image. If it cannot sign,
+  it stops before the registry.
+
+### Fixed
+
+- **SYN signals no longer miss a burst that crosses a one-second boundary.** The rate is now
+  measured over two time buckets. Each signal still fires at most once per second.
+- **`BPF_FS_PATH`** now also sets where the sensor pins its maps. Before, it applied only when
+  the app opened them.
+
+**Known limits:**
+
+- The kernel lists are IPv4 only. XDP has no IPv6 path yet.
+- The kernel lists and their action gates are not available on the Lite profile.
+- Client lists need one `wowyrd-app` process. More than one replica is not supported.
+
+### Breaking changes
+
+None for the default setup. If you set `BPF_FS_PATH` to a path other than the default, the sensor
+now pins its maps there.
+
+### Upgrade safety
+
+- New database migrations: 3 on the Full profile (PostgreSQL), none on the Lite profile (SQLite).
+  The app applies them at start.
+- Migrations only go forward. To roll back, restore the backup that you made before the upgrade
+  (see `OPERATIONS.md`).
+- The hijacked-netblock list and new client lists start in `observe` mode. The upgrade blocks
+  nothing by itself. The Tor list keeps the mode that you approved.
+- `MANAGED_TOR_MAX_LIST_AGE_HOURS` and `MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS` must be a
+  whole number of 1 or more. Any other value stops the app at start. Through the Compose files,
+  an empty value gives the default.
+
+### Migration steps
+
+1. Get the new `docker-compose.yml` from this release. It adds the volume `threat_intel_cache`
+   and the two list-age settings.
+2. Optional: set `MANAGED_TOR_MAX_LIST_AGE_HOURS`, `MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS`
+   or a comma-separated `NETWORK_INTERFACE` in `.env`.
+3. Optional: if your firewall allows outbound hosts by name, add the host of the hijacked-netblock
+   list (`NETWORK.md`). Without it, that list stays empty and the other lists still work.
+4. Optional: verify the images (`INSTALL.md`, step 3).
+5. Follow "Upgrade" in `OPERATIONS.md`: back up, set `WOWYRD_VERSION=0.3.10`, pull, start.
+6. Check `GET /health`: `xdp_attached` and `tc_attached` show which sensor programs run.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.3.10`, `ghcr.io/chavychaze/wowyrd-dashboard:0.3.10` (no
+leading `v` on the image tag). See `INSTALL.md` for the full install.
+
+Image digests (multi-arch index; each covers `linux/amd64` and `linux/arm64`):
+
+- `ghcr.io/chavychaze/wowyrd-app:0.3.10` — `sha256:e156e90babfc49fd159b28c1dc14ae0d25a1cb4892c0710fb1e30511262f9dff`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.3.10` — `sha256:d0eb2e92a31f4d72036ae6cf602eec915a205b394c8df5c35b350def80c73930`
+
+Both images are cosign-signed (keyless) by the release workflow of tag `v0.3.10`. `INSTALL.md`,
+step 3, has the verification command. The index and each platform image are signed.
+
+Changes to this repository's own files in this release:
+
+- `docker-compose.yml`: new volume `threat_intel_cache` for the last valid hijacked-netblock list.
+  New pass-through settings `MANAGED_TOR_MAX_LIST_AGE_HOURS` and
+  `MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS`.
+- `.env.example`: the two list-age settings, and `NETWORK_INTERFACE` as a list.
+- `NETWORK.md`: the hijacked-netblock list host, for version `0.3.10`.
+- `INSTALL.md`, `README.md`, `OPERATIONS.md`: version `0.3.10` in the examples.
 
 ## v0.3.9 — 2026-11-08
 

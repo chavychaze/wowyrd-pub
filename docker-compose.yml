@@ -29,6 +29,9 @@ services:
       - /sys/fs/bpf:/sys/fs/bpf:rw
       - ./config/intel:/etc/wowyrd:ro
       - app_logs:/var/log/wowyrd
+      # 0.3.10 or later: keeps the last valid kernel blocklist and the download rate limit
+      # across restarts and upgrades.
+      - threat_intel_cache:/var/lib/wowyrd/threat-intel
     environment:
       - POSTGRES_DSN=postgres://wowyrd:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@localhost:5432/wowyrd_app
       - REDIS_ADDR=localhost:6379
@@ -48,6 +51,8 @@ services:
       # review.
       - ENFORCEMENT_MODE=${ENFORCEMENT_MODE:-observe}
       - BPF_OBJECT_PATH=/usr/local/share/wowyrd/tc.bpf.o
+      # Empty = the first interface that is not loopback. From 0.3.10, a comma-separated list
+      # (up to 8) attaches XDP to each interface.
       - NETWORK_INTERFACE=${NETWORK_INTERFACE:-}
       # true = never start the eBPF loader (PostgreSQL-only mode), 0.3.9 or later.
       - WOWYRD_EBPF_DISABLE=${WOWYRD_EBPF_DISABLE:-false}
@@ -68,6 +73,10 @@ services:
       # Days before an unapproved proposal expires (0.3.9 or later). Empty = 7. A value that is
       # not a whole number of 1 or more stops the app at start.
       - PROPOSAL_TTL_DAYS=${PROPOSAL_TTL_DAYS:-7}
+      # Hours before a managed kernel list that was not updated stops enforcing and goes back
+      # to observe (0.3.10 or later). A whole number of 1 or more; any other value stops the app.
+      - MANAGED_TOR_MAX_LIST_AGE_HOURS=${MANAGED_TOR_MAX_LIST_AGE_HOURS:-72}
+      - MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS=${MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS:-168}
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,3 +152,4 @@ volumes:
   postgres_data:
   redis_data:
   app_logs:
+  threat_intel_cache:

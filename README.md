@@ -86,8 +86,8 @@ Explicit versioning only — there is no `latest` tag. Check this repository's R
 the current version, then pin `WOWYRD_VERSION` in `.env` to it and change it deliberately, not
 automatically, when you're ready to upgrade.
 
-**Drop the leading `v`.** A release is tagged `v0.3.9` on the Releases page, but the actual Docker
-image tag is `0.3.9` (no `v`) — set `WOWYRD_VERSION=0.3.9`, not `WOWYRD_VERSION=v0.3.9`, or the
+**Drop the leading `v`.** A release is tagged `v0.3.10` on the Releases page, but the actual Docker
+image tag is `0.3.10` (no `v`) — set `WOWYRD_VERSION=0.3.10`, not `WOWYRD_VERSION=v0.3.10`, or the
 pull will fail with "manifest unknown."
 
 ## Safety defaults
@@ -101,7 +101,7 @@ enforcement, and only change this setting deliberately, after that review.
 For a pilot on your own data, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
 (`docker-compose.yml`: PostgreSQL + Redis), because the champion-challenger comparison and the
 full detection need it. `INSTALL.md` also covers verifying image signatures
-(`cosign verify`) before you pull. `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
+(`cosign verify`) before you pull. `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
 
 `docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look. Its
 detection is not the same as Full, so it is not a pilot profile. `INSTALL.md` lists every feature
