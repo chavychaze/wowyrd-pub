@@ -10,7 +10,8 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-No changes since `v0.4.0`.
+- `README.md`: a line on the rule review of your own fraud and AML rules, with a link to
+  [wowyrd.net/rule-review/](https://wowyrd.net/rule-review/).
 
 ## v0.4.0 — 2026-11-13
 

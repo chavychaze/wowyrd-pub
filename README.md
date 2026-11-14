@@ -104,6 +104,8 @@ For a pilot on your own data, follow [`INSTALL.md`](INSTALL.md). It uses the Ful
 full detection need it. `INSTALL.md` also covers verifying image signatures
 (`cosign verify`) before you pull. `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
 
+The rule review of your own fraud and AML rules is delivered during a pilot, inside your environment: see https://wowyrd.net/rule-review/.
+
 `docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look. Its
 detection is not the same as Full, so it is not a pilot profile. `INSTALL.md` lists every feature
 it leaves out.
