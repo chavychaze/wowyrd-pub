@@ -46,6 +46,8 @@ The app is stopped during the upgrade. Plan a maintenance window.
 ### Upgrade
 
 1. Read the release's entry in [`CHANGELOG.md`](CHANGELOG.md) and on the Releases page.
+   For `0.4.0`, change your integration to the new amount format before you upgrade (see
+   "Breaking changes" in that entry).
 2. Stop the stack:
    ```bash
    docker compose stop
@@ -61,7 +63,7 @@ The app is stopped during the upgrade. Plan a maintenance window.
    tar -czf backup/config-$D.tgz .env config/
    ```
    `backup/` holds your secrets and your data. Store it as you store the database itself.
-4. Set the new version in `.env`, for example `WOWYRD_VERSION=0.3.10`.
+4. Set the new version in `.env`, for example `WOWYRD_VERSION=0.4.0`.
 5. Verify the new images, as in `INSTALL.md` step 3.
 6. Pull and start:
    ```bash

@@ -77,6 +77,40 @@ services:
       # to observe (0.3.10 or later). A whole number of 1 or more; any other value stops the app.
       - MANAGED_TOR_MAX_LIST_AGE_HOURS=${MANAGED_TOR_MAX_LIST_AGE_HOURS:-72}
       - MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS=${MANAGED_HIJACKED_NETBLOCK_MAX_LIST_AGE_HOURS:-168}
+      # Your own high-risk country list for the rule high_risk_jurisdiction_counterparty
+      # (0.4.0 or later): comma-separated two-letter codes, for example KP,IR,MM,SY. Leave it
+      # commented out to use the built-in list. Set but empty: the rule never fires. A code that
+      # is not two letters stops the app at start.
+      # - HIGH_RISK_COUNTRIES=KP,IR,MM
+      # Flags from a sensor on another host (0.4.0 or later). Off by default: with
+      # SENSOR_INGEST_ENABLED=false the app opens no new port. Turn it on only with WoWyrd's
+      # sensor-host install guide. Certificate files go in ./config/intel/ingest/ on the host,
+      # which the mount above shows at /etc/wowyrd/ingest/. Not available on the Lite profile.
+      - SENSOR_INGEST_ENABLED=${SENSOR_INGEST_ENABLED:-false}
+      - SENSOR_INGEST_ADDR=${SENSOR_INGEST_ADDR:-0.0.0.0:8092}
+      - SENSOR_INGEST_CERT_FILE=${SENSOR_INGEST_CERT_FILE:-}
+      - SENSOR_INGEST_KEY_FILE=${SENSOR_INGEST_KEY_FILE:-}
+      - SENSOR_INGEST_CLIENT_CA_FILE=${SENSOR_INGEST_CLIENT_CA_FILE:-}
+      - SENSOR_INGEST_ENROLLED=${SENSOR_INGEST_ENROLLED:-}
+      - SENSOR_INGEST_ENROLLED_FILE=${SENSOR_INGEST_ENROLLED_FILE:-}
+      # Optional limits. Unset = the app's built-in value.
+      - SENSOR_INGEST_MAX_MESSAGE_BYTES
+      - SENSOR_INGEST_MAX_FLAGS_PER_BATCH
+      - SENSOR_INGEST_MAX_CONCURRENT_BATCHES
+      - SENSOR_INGEST_MAX_CONNECTION_AGE_SECS
+      - SENSOR_INGEST_MAX_CONNECTIONS
+      - SENSOR_INGEST_MAX_CONNECTIONS_PER_CERTIFICATE
+      - SENSOR_INGEST_IDLE_TIMEOUT_SECS
+      - SENSOR_INGEST_TOKENS_PER_SEC_PER_SENSOR
+      # The address ranges of your own proxies and load balancers (comma-separated CIDRs).
+      # Sensor ingest refuses a flag whose source is in one of them. Empty refuses nothing.
+      - TRUSTED_PROXY_CIDRS=${TRUSTED_PROXY_CIDRS:-}
+    # Size rotation for the app log (0.4.0 or later). json-file rotates by size only.
+    logging:
+      driver: json-file
+      options:
+        max-size: ${WOWYRD_LOG_MAX_SIZE:-50m}
+        max-file: "${WOWYRD_LOG_MAX_FILE:-5}"
     depends_on:
       postgres:
         condition: service_healthy

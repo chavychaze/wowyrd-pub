@@ -1,6 +1,6 @@
 # What leaves your network
 
-Every outbound connection that the WoWyrd stack in this repository makes, for version `0.3.10`.
+Every outbound connection that the WoWyrd stack in this repository makes, for version `0.4.0`.
 For an older version, see this file in that version's release.
 
 ```mermaid
@@ -36,6 +36,9 @@ flowchart TD
 - **MaxMind GeoLite2, IP2Location and the card-BIN database are local files.** The app reads them
   from `config/intel/`. It does not download them.
 - **Stripe:** the app only receives Stripe callbacks. It never connects to Stripe.
+- **Flags from a sensor on another host (`0.4.0` or later) are inbound.** The sensor host connects
+  to the app, not the other way round. The app opens this port (`SENSOR_INGEST_ADDR`, default
+  `8092`) only when `SENSOR_INGEST_ENABLED=true`. It is off by default.
 
 ## Run with no outbound connections
 

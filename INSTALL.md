@@ -15,7 +15,7 @@ defers to this file. This file is the source of truth.
 | Use it for | A pilot on your own data | A quick look only |
 | Containers | 4: `wowyrd-app`, `wowyrd-dashboard`, `wowyrd-postgres`, `wowyrd-redis` | 2: `wowyrd-app`, `wowyrd-dashboard` |
 | Transaction evaluation, case queue | Yes | Yes |
-| Rule pack loaded | 47 rules in `v0.3.10` and `v0.3.9` (2 of them need the optional network sensor, see `CHANGELOG.md`), 47 in `v0.3.6` (2 of them cannot fire), 41 in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
+| Rule pack loaded | 79 rules in `v0.4.0`, 47 in `v0.3.10` and `v0.3.9` (2 of them need the optional network sensor, see `CHANGELOG.md`), 47 in `v0.3.6` (2 of them cannot fire), 41 in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
 | Detection | All loaded rules can fire (the 2 XDP rules only with the network sensor) | Not the same as Full (see below) |
 | Retro-analysis report page | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
 | Evidence report (`/v1/reports/evidence`) | Yes | Yes from `v0.3.9`. Not available in `v0.3.6` and `v0.3.5` |
@@ -40,7 +40,7 @@ the same rule pack is loaded. Step 7 covers the Lite profile.
 flowchart TD
     A[Get a read:packages token from your WoWyrd contact] --> B[docker login ghcr.io]
     B --> C{Version to install}
-    C -->|0.3.10, 0.3.9, 0.3.6 or 0.3.4| D[cosign verify both images]
+    C -->|0.4.0, 0.3.10, 0.3.9, 0.3.6 or 0.3.4| D[cosign verify both images]
     C -->|0.3.5| E[Compare digests with the Releases page]
     D --> F[cp .env.example .env<br/>set WOWYRD_VERSION, POSTGRES_PASSWORD,<br/>API_KEYS, RETENTION_HASH_KEY]
     E --> F
@@ -61,8 +61,8 @@ The diagram shows steps 1–5. Step 7 (Lite) is a separate quick look, not a pil
 - A Linux host for a pilot. The Full profile runs `wowyrd-app` with host networking and
   privileged mode, for optional eBPF enforcement. Use kernel 5.17 or newer: the TC filter uses
   `bpf_loop`, added in 5.17. On Ubuntu 22.04, the GA kernel (5.15) is too old for the TC filter;
-  use the HWE kernel. On an older kernel, the XDP sensor (`v0.3.9` or later) can attach without
-  the TC filter. From `v0.3.10`, `GET /health` shows `xdp_attached` and `tc_attached`, so you can
+  use the HWE kernel. On a kernel older than 5.17, only the XDP part of the sensor (`v0.3.9` or
+  later) attaches; the TC filter does not. From `v0.3.10`, `GET /health` shows `xdp_attached` and `tc_attached`, so you can
   see which program runs. eBPF is optional: if no sensor
   program attaches, or with `WOWYRD_EBPF_DISABLE=true` (`v0.3.9` or later), WoWyrd runs in
   PostgreSQL-only mode. If `NETWORK_INTERFACE` is empty, the sensor uses the first network interface that is not
@@ -109,7 +109,7 @@ On a machine with registry access (log in as above first, and do step 3 there):
 1. Pull the four images for the platform of the target host (`linux/amd64` or `linux/arm64`):
    ```bash
    export DOCKER_DEFAULT_PLATFORM=linux/amd64   # the target host's platform
-   V=0.3.10
+   V=0.4.0
    docker pull ghcr.io/chavychaze/wowyrd-app:$V
    docker pull ghcr.io/chavychaze/wowyrd-dashboard:$V
    docker pull postgres:15-alpine
@@ -155,14 +155,14 @@ an arm64 host, set `DOCKER_DEFAULT_PLATFORM=linux/amd64` first.
 
 ```mermaid
 flowchart TD
-    A{Version} -->|0.3.10, 0.3.9, 0.3.6 or 0.3.4| B[cosign verify both images]
+    A{Version} -->|0.4.0, 0.3.10, 0.3.9, 0.3.6 or 0.3.4| B[cosign verify both images]
     A -->|0.3.5| C[Compare digests with the Releases page]
     B --> D{Result}
     D -->|Verification passes| E[Pull by the same tag]
     D -->|Verification fails| F[Do not install.<br/>Contact WoWyrd]
 ```
 
-`v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/). The
+`v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/). The
 signature comes from the WoWyrd release workflow on GitHub Actions (keyless signing, with
 Sigstore's public Fulcio and Rekor services). No signing key is stored, so no key can leak.
 
@@ -174,7 +174,7 @@ entry instead. Releases before `v0.3.4` are unsigned too.
 1. Install cosign ([instructions](https://docs.sigstore.dev/cosign/system_config/installation/)).
 2. Verify both images. Set `V` to the version that you install:
    ```bash
-   V=0.3.10
+   V=0.4.0
    for IMAGE in wowyrd-app wowyrd-dashboard; do
      cosign verify \
        --certificate-identity-regexp "^https://github.com/chavychaze/.*$" \
@@ -189,13 +189,14 @@ entry instead. Releases before `v0.3.4` are unsigned too.
 
 A Software Bill of Materials (CycloneDX format) for each image — `wowyrd-app.cdx.json` and
 `bom.json` respectively — is attached to each release on this repo's Releases page for a
-vendor-security review.
+vendor-security review. From `v0.4.0`, `wowyrd-sensor.cdx.json` is attached too, for the
+sensor-host image `wowyrd-sensor` (used only with a sensor on another host).
 
 ## 4. Configure and start (Full profile)
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.3.10 (drop the leading "v" — see README.md's
+# edit .env: set WOWYRD_VERSION=0.4.0 (drop the leading "v" — see README.md's
 # "Versions" section), POSTGRES_PASSWORD, API_KEYS, DASHBOARD_API_KEYS (see "Limit who can open
 # the dashboard and the API" below) and RETENTION_HASH_KEY (see "Personal data anonymization").
 # On an internet-facing host, also add POSTGRES_BIND=127.0.0.1 and REDIS_BIND=127.0.0.1, so the
@@ -371,7 +372,7 @@ the features marked "Not available" in "Which profile to use" above. So it is no
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.3.10, API_KEYS, DASHBOARD_API_KEYS, and POSTGRES_PASSWORD to any placeholder value
+# edit .env: set WOWYRD_VERSION=0.4.0, API_KEYS, DASHBOARD_API_KEYS, and POSTGRES_PASSWORD to any placeholder value
 # (this profile never connects to Postgres, but Compose still validates the variable exists —
 # see docker-compose.lite.yml's own comment on why).
 

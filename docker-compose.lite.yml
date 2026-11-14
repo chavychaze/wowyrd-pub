@@ -80,6 +80,10 @@ services:
       - INTEL_BUNDLE_URL=${INTEL_BUNDLE_URL:-}
       - WOWYRD_OFFLINE=${WOWYRD_OFFLINE:-false}
       - REQUIRED_APPROVALS_DEFAULT=${REQUIRED_APPROVALS_DEFAULT:-1}
+      # Your own high-risk country list (0.4.0 or later), as in docker-compose.yml.
+      # - HIGH_RISK_COUNTRIES=KP,IR,MM
+      # No SENSOR_INGEST_* here on purpose: flags from a sensor on another host are not
+      # available on the Lite profile. The base file's log rotation still applies here.
       # Days before an unapproved proposal expires (0.3.9 or later). Empty = 7. A value that is
       # not a whole number of 1 or more stops the app at start.
       - PROPOSAL_TTL_DAYS=${PROPOSAL_TTL_DAYS:-7}

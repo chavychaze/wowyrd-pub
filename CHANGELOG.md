@@ -10,7 +10,178 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-No changes since `v0.3.10`.
+No changes since `v0.4.0`.
+
+## v0.4.0 — 2026-11-13
+
+> **Breaking for API clients: amounts are now whole numbers in each currency's smallest unit.**
+> Change your integration before you upgrade. See "Breaking changes" and "Migration steps".
+
+> **Signed, multi-arch.** `v0.4.0` images are cosign-signed and built for `linux/amd64` and
+> `linux/arm64`. See `INSTALL.md`, step 3.
+
+### What's new
+
+- **Exact money amounts.** The app stores and compares amounts as whole numbers in each
+  currency's smallest unit (for example cents). Velocity sums and report totals are exact and
+  are kept per currency: amounts in different currencies no longer add together. The app accepts
+  every active ISO 4217 currency that has a minor unit. The dashboard shows each amount with its
+  currency's own decimals, for example `$222.00`.
+- **32 new rules: 79 rules** in the rule pack, on the Full and Lite profiles. 2 of them use the
+  network sensor (XDP): they fire only on the Full profile on a Linux host where the sensor
+  attaches. Every new rule is scoring-only: it adds a weight and a plain-English reason, and never
+  blocks on its own. Each threshold is a starting value for you to tune on your own data. The new
+  rules cover, among others: transfers to a payee whose name does not match, scam wording in a
+  payment reference, money in from many banks, a counterparty in a high-risk country, cash out
+  soon after a credit, repeated round amounts, an amount far above the customer's average, a
+  payment at an unusual hour, many small credits then one large payout, cash just below a
+  reporting level, payee bank details changed just before a payment, and a large payment to a
+  new payee by an older customer.
+- **New optional request fields** on `POST /v1/evaluate` and the historical import:
+  `operation_type`, `mcc`, `purpose_category`, `payee_type`, `account_type`,
+  `payee_name_check_result`, `payer_bank_id`, `holder_age_band` (a coarse band, never a birth
+  date), `counterparty_country`, `payment_reference` (mapped to a category, then dropped),
+  `payment_reference_category` and `vulnerability_flag` (kept in memory for one request only,
+  never stored or exported). Without these fields, the rules that need them stay silent and the
+  existing behaviour does not change.
+- **`HIGH_RISK_COUNTRIES`:** your own list of high-risk countries for the rule
+  `high_risk_jurisdiction_counterparty` (comma-separated two-letter codes). Unset: the built-in
+  list. Set but empty: the rule never fires. A code that is not two letters stops the app at start.
+- **Regulatory basis per rule.** `GET /v1/rules` has a new read-only field `regulatory_basis`:
+  region, framework, requirement ID and how binding the source is ("draft", "agreed, not adopted",
+  "in force since ..."). A tag is WoWyrd's judgement of which requirement a rule helps with. It is
+  not a statement by a regulator, and not legal advice.
+- **A warning when network signals alone could move a payment to review.** A weight or
+  score-band proposal can return a `warning`. `GET /v1/rules/network-signal-reach` shows the
+  current setup. The dashboard shows a banner on the Rules tab. Nothing is refused.
+- **Flags from a sensor on another host** (Full profile only). An XDP sensor on an edge host can
+  send its flags to the app over gRPC with mutual TLS, and the app's emergency switch reaches it.
+  Off by default: with `SENSOR_INGEST_ENABLED=false` the app opens no new port. To set it up,
+  ask WoWyrd for the sensor-host install guide. A block cannot rest on these network flags alone:
+  such a decision becomes Review. Block lists on edge sensors are not turned on in this version.
+- **`GET /v1/emergency-bypass/audit-log` is paged,** newest first: `limit` (default 100) and
+  `before`, with `next_cursor`, `total_rows` and `tip_hash`. `chain_intact` still covers the
+  whole chain. Client operators can read it.
+- **Log rotation:** the Compose file rotates the app log by size (`WOWYRD_LOG_MAX_SIZE`, default
+  `50m`; `WOWYRD_LOG_MAX_FILE`, default 5).
+
+### Security
+
+- Dependency updates for published advisories: openssl 0.10.80, quinn-proto 0.11.19, quinn-udp
+  0.5.16.
+- The release images use SQLite 3.54.1 (RUSTSEC-2026-0459).
+
+### Fixed
+
+- **Approved weights are no longer reset at start.** Before, the rule-pack loader put an
+  operator-approved weight back to the pack's value at each start. It now only adds rules that
+  the database does not have.
+- **Lite:** a file-backed database failed at its second start (since `v0.3.8`). A pending
+  calibration proposal's approvals and expiry could change after a restart. Both are fixed.
+- The 24-hour total behind the structuring rules counted incoming credits too. It now counts
+  only money that the account sends or spends.
+- An amount total that the app could not read is now treated as missing data, not as zero.
+- The kill-switch and mode audit logs reported a broken chain on Linux. New rows verify. Rows
+  written before this fix can still show as broken on Linux.
+- Stripe amounts in three-decimal currencies were ten times too small.
+- `GET /health` no longer reports the Tor list as past its enforcement limit on an install with
+  no network sensor.
+
+**Known limits:**
+
+- The API and the dashboard must be upgraded together. An older dashboard cannot read the new
+  amount object.
+- On a Linux kernel older than 5.17, only the XDP part of the optional network sensor attaches.
+  The TC filter does not. `GET /health` shows `xdp_attached` and `tc_attached`.
+- Flags from a sensor on another host are not available on the Lite profile.
+
+### Breaking changes
+
+- **Amounts on `POST /v1/evaluate`, `POST /v1/feedback` and the historical feedback import.**
+  Send `amount` as an object: `{"minor_units": 10050, "currency": "USD"}` for USD 100.50.
+  `minor_units` is a whole number. `currency` is an upper-case ISO 4217 code and is required.
+  `exponent` is optional; if you send it, it must match the currency. A top-level `currency` may
+  stay, but it must be the same. These requests now get HTTP 422, and nothing is recorded:
+  - `amount` as a plain number or a string;
+  - `minor_units` with a fraction;
+  - an unknown or lower-case currency code, or a code with no minor unit (for example `XXX`);
+  - an `exponent` that does not match the currency, or any other field inside `amount`.
+- **Responses:** the feed, the WebSocket transaction event and the evidence report's
+  `flagged_value[].total` return `{"minor_units": 150000, "currency": "EUR", "exponent": 2}`.
+  To show it, divide `minor_units` by 10 to the power of `exponent`.
+- **Not changed:** log and file ingest (generic import, CSV, CloudWatch, ALB, WAF, Cloudflare)
+  still takes major-unit numbers. Payment-callback webhooks keep the provider's format.
+  `available_balance` stays a major-unit number. Rule thresholds are in major units of the
+  payment's own currency; WoWyrd does not convert currencies.
+- **`GET /v1/emergency-bypass/audit-log`:** a client that read the whole log in one call must now
+  follow `next_cursor`.
+
+```mermaid
+flowchart LR
+  A["Your system"] -->|"amount: {minor_units, currency}"| B["POST /v1/evaluate<br/>POST /v1/feedback"]
+  B -->|valid| C["Stored and compared<br/>as whole numbers"]
+  B -->|"plain number, fraction,<br/>unknown currency"| D["HTTP 422, nothing recorded"]
+  E["Log and file ingest"] -->|"major units, unchanged"| C
+  C --> F["Feed, WebSocket, reports:<br/>{minor_units, currency, exponent}"]
+```
+
+### Upgrade safety
+
+- New database migrations: 16 on the Full profile (PostgreSQL), and new steps on the Lite
+  profile (SQLite). The app applies them at start.
+- **The amount migration stops on unknown data.** If a stored amount has a missing or unknown
+  currency, the migration stops before it changes any row, and the error lists the rows. Correct
+  them and start again.
+- **Rolling sums restart once.** Velocity totals start again from zero at the upgrade and refill
+  within their windows.
+- **More than one app instance:** apply the migrations first. One migration checks the
+  kill-switch audit record. If it finds two rows that follow the same row, it stops with a
+  message: do not continue, and contact WoWyrd. Then you can upgrade the instances one at a time.
+  Upgrade every instance to `0.4.0` before you install the next release.
+- Between the integration change and the upgrade, the old and new versions do not accept each
+  other's amounts. Plan a short window, or hold traffic that carries amounts until both sides are
+  upgraded.
+- Migrations only go forward. To roll back, restore the backup that you made before the upgrade
+  (see `OPERATIONS.md`).
+- The new rules are scoring-only and the defaults stay `observe`. The upgrade blocks nothing by
+  itself.
+
+### Migration steps
+
+1. Back up (see "Upgrade" in `OPERATIONS.md`).
+2. Update your integration to send `amount` as `{minor_units, currency}` on `POST /v1/evaluate`,
+   `POST /v1/feedback` and the historical feedback import. Update anything that reads the feed,
+   the WebSocket event or the evidence report totals.
+3. Get the new `docker-compose.yml` and `docker-compose.lite.yml` from this release. They add
+   `HIGH_RISK_COUNTRIES` (commented out), the `SENSOR_INGEST_*` settings (off),
+   `TRUSTED_PROXY_CIDRS` and the log rotation.
+4. Optional: verify the images (`INSTALL.md`, step 3).
+5. Set `WOWYRD_VERSION=0.4.0`. Pull and start the app and the dashboard together.
+6. Check `GET /health`, then send one test evaluation with an amount object.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.4.0`, `ghcr.io/chavychaze/wowyrd-dashboard:0.4.0` (no
+leading `v` on the image tag). See `INSTALL.md` for the full install. The sensor-host image
+`ghcr.io/chavychaze/wowyrd-sensor:0.4.0` is used only with a sensor on another host.
+
+Image digests (multi-arch index; each covers `linux/amd64` and `linux/arm64`):
+
+- `ghcr.io/chavychaze/wowyrd-app:0.4.0` — `sha256:2b3a640612adf13a2003c2476109f4a714c1c5eed90f0399abfa04164ac40cfc`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.4.0` — `sha256:26e430ee39dba4029a45368b8603d1474712a3af06b2156f9c68b8e20780ec50`
+- `ghcr.io/chavychaze/wowyrd-sensor:0.4.0` — `sha256:7097cb63e1cf1f21472e79214db6ed649fca91de825fd0d979f56be3093a60a5`
+
+The images are cosign-signed (keyless) by the release workflow of tag `v0.4.0`. `INSTALL.md`,
+step 3, has the verification command. The index and each platform image are signed.
+
+Changes to this repository's own files in this release:
+
+- `docker-compose.yml`: `HIGH_RISK_COUNTRIES` (commented out), the `SENSOR_INGEST_*` settings
+  (off by default), `TRUSTED_PROXY_CIDRS`, and log rotation by size.
+- `docker-compose.lite.yml`: `HIGH_RISK_COUNTRIES` (commented out).
+- `.env.example`: the new settings.
+- `INSTALL.md`, `README.md`, `OPERATIONS.md`, `NETWORK.md`: version `0.4.0`, the rule count and
+  the kernel note.
 
 ## v0.3.10 — 2026-11-09
 
