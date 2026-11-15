@@ -10,8 +10,76 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-- `README.md`: a line on the rule review of your own fraud and AML rules, with a link to
-  [wowyrd.net/rule-review/](https://wowyrd.net/rule-review/).
+No changes since `v0.5.0`.
+
+## v0.5.0 — 2026-11-15
+
+> **Signed, multi-arch.** `v0.5.0` images are cosign-signed and built for `linux/amd64` and
+> `linux/arm64`. See `INSTALL.md`, step 3.
+
+### What's new
+
+- **No change to the app, the dashboard or the sensor.** Their code is the same as in `v0.4.0`.
+  The images are rebuilt for this release. The API, the rule pack (79 rules) and the database
+  are the same as in `v0.4.0`.
+- **Rule review.** The rule review of your own fraud and AML rules is delivered during a pilot,
+  inside your environment: see [wowyrd.net/rule-review/](https://wowyrd.net/rule-review/). This
+  release changes two of its file formats:
+  - The summary file is `wowyrd-rule-review-summary/5` only when an operational input file is
+    given. Otherwise it stays `wowyrd-rule-review-summary/4`, as before.
+  - The report state file is `wowyrd-report-state/2`. A `wowyrd-report-state/1` file from an
+    earlier review is still read.
+
+### Breaking changes
+
+None from `v0.4.0`. If you upgrade from `v0.3.10` or older, the `v0.4.0` breaking changes apply:
+amounts are `{minor_units, currency}` objects. See the `v0.4.0` section below.
+
+### Upgrade safety
+
+- From `v0.4.0`: no new database migration.
+- From `v0.3.10` or older: follow "Upgrade safety" and "Migration steps" of `v0.4.0` below.
+- More than one app instance: `v0.5.0` handles the kill-switch audit record the same way as
+  `v0.4.0`, so a `v0.4.0` instance and a `v0.5.0` instance can run side by side during the
+  upgrade.
+- Migrations only go forward. To roll back, restore the backup that you made before the upgrade
+  (see `OPERATIONS.md`).
+
+### Migration steps
+
+1. From `v0.3.10` or older: first do the `v0.4.0` migration steps (change your integration to the
+   new amount format).
+2. Optional: verify the images (`INSTALL.md`, step 3).
+3. Follow "Upgrade" in `OPERATIONS.md`: back up, set `WOWYRD_VERSION=0.5.0`, pull, start.
+4. Check `GET /health`.
+
+The Compose files and `.env.example` do not change in this release.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.5.0`, `ghcr.io/chavychaze/wowyrd-dashboard:0.5.0` (no
+leading `v` on the image tag). See `INSTALL.md` for the full install. The sensor-host image
+`ghcr.io/chavychaze/wowyrd-sensor:0.5.0` is used only with a sensor on another host.
+
+Image digests (multi-arch index; each covers `linux/amd64` and `linux/arm64`):
+
+- `ghcr.io/chavychaze/wowyrd-app:0.5.0` — `sha256:f5a7ca98f7444c8b3daea55b68fe13d62f9c9baa61b5609622620492febc9799`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.5.0` — `sha256:bb3f7306858e77d2018cb19f6dbc7f26d763c41ddf3a4f0e839d7f65c1193d0b`
+- `ghcr.io/chavychaze/wowyrd-sensor:0.5.0` — `sha256:b80467adf45858d2b453f4d056c679d54f44fbab57ddffb35494b01fcc61acad`
+
+Platform digests of `wowyrd-app:0.5.0`: `linux/amd64`
+`sha256:a37beb6d2c53b9f0e624a452cde67e662b1187f0dabe072679892c7cbedf5ae7`, `linux/arm64`
+`sha256:df0922693263b5fddaa653a05decc141b5035a063f95d233e12c66d83167116f`.
+
+The images are cosign-signed (keyless) by the release workflow of tag `v0.5.0`. `INSTALL.md`,
+step 3, has the verification command. Each index also lists two build attestation entries
+(platform `unknown/unknown`). Docker does not run them.
+
+Changes to this repository's own files in this release:
+
+- `README.md`: a line on the rule review, with a link to
+  [wowyrd.net/rule-review/](https://wowyrd.net/rule-review/) (already published after `v0.4.0`).
+- `INSTALL.md`, `README.md`, `OPERATIONS.md`, `NETWORK.md`: version `0.5.0` in the examples.
 
 ## v0.4.0 — 2026-11-13
 

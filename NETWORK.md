@@ -1,6 +1,6 @@
 # What leaves your network
 
-Every outbound connection that the WoWyrd stack in this repository makes, for version `0.4.0`.
+Every outbound connection that the WoWyrd stack in this repository makes, for version `0.5.0`.
 For an older version, see this file in that version's release.
 
 ```mermaid
