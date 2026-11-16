@@ -1,17 +1,18 @@
 # WoWyrd
 
-Pre-transaction risk control for financial and high-velocity platforms. Observe-first,
-on-premise: WoWyrd runs inside your own environment, so raw transaction data can stay on
-your infrastructure rather than leaving it to be scored. First deliverable is an evidence
-report, not a block — shadow-mode / champion-challenger validation, with controlled
-enforcement only after evidence review.
+WoWyrd measures the fraud and AML rules you already run, on your own data, inside your environment.
 
-WoWyrd is available now: install it in your environment today and run a pilot on your own
-data.
+The rule review of your own fraud and AML rules is delivered during a pilot, inside your environment: see https://wowyrd.net/rule-review/.
+More about WoWyrd: https://wowyrd.net.
 
-This repository contains **compiled images only** — no source code. It's the quick-start
-distribution surface for a WoWyrd install; the engineering source lives in a private
-repository.
+## About this repository
+
+This repository holds the install files and public docs for the WoWyrd risk engine and its
+optional sensor. **The engine and the sensor are not offered now.** The files, the signed
+releases and their notes stay here as a record.
+
+The repository contains **compiled images only**: no source code. The engineering source lives
+in a private repository.
 
 ## What's here
 
@@ -22,7 +23,7 @@ repository.
 - `docker-compose.macos.yml` — an overlay that runs the same stack on macOS / Docker Desktop
   for an evaluation or a demo (bridge networking, eBPF off).
 - `docker-compose.lite.yml` — an overlay for a quick look without a database (embedded SQLite,
-  2 containers). Not a pilot profile: see "Pilot install" below.
+  2 containers). Not a pilot profile: see "Engine install" below.
 - `.env.example` — copy to `.env` and fill in before starting.
 - [`INSTALL.md`](INSTALL.md) — the pilot install runbook.
 - [`OPERATIONS.md`](OPERATIONS.md) — upgrade, backup, rollback and uninstall.
@@ -97,14 +98,12 @@ pull will fail with "manifest unknown."
 observe-first by design: review the evidence it produces before enabling any autonomous
 enforcement, and only change this setting deliberately, after that review.
 
-## Pilot install
+## Engine install (not offered now)
 
-For a pilot on your own data, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
+To install the engine, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
 (`docker-compose.yml`: PostgreSQL + Redis), because the champion-challenger comparison and the
 full detection need it. `INSTALL.md` also covers verifying image signatures
 (`cosign verify`) before you pull. `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
-
-The rule review of your own fraud and AML rules is delivered during a pilot, inside your environment: see https://wowyrd.net/rule-review/.
 
 `docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look. Its
 detection is not the same as Full, so it is not a pilot profile. `INSTALL.md` lists every feature
