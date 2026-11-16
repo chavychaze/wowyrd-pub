@@ -5,6 +5,10 @@ WoWyrd measures the fraud and AML rules you already run, on your own data, insid
 The rule review of your own fraud and AML rules is delivered during a pilot, inside your environment: see https://wowyrd.net/rule-review/.
 More about WoWyrd: https://wowyrd.net.
 
+From `v0.6.0`, the rule review also runs alone, as one signed container image with no engine, no
+sensor and no database: see [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md). It is
+tested with cosign 2.6.1.
+
 ## About this repository
 
 This repository holds the install files and public docs for the WoWyrd risk engine and its
@@ -26,6 +30,8 @@ in a private repository.
   2 containers). Not a pilot profile: see "Engine install" below.
 - `.env.example` — copy to `.env` and fill in before starting.
 - [`INSTALL.md`](INSTALL.md) — the pilot install runbook.
+- [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md) — install and run the rule review
+  alone, from a signed image file, with no network.
 - [`OPERATIONS.md`](OPERATIONS.md) — upgrade, backup, rollback and uninstall.
 - [`SECURITY.md`](SECURITY.md) — how to report a vulnerability.
 - [`NETWORK.md`](NETWORK.md) — every outbound connection the stack makes, and how to run offline.
@@ -88,8 +94,8 @@ Explicit versioning only — there is no `latest` tag. Check this repository's R
 the current version, then pin `WOWYRD_VERSION` in `.env` to it and change it deliberately, not
 automatically, when you're ready to upgrade.
 
-**Drop the leading `v`.** A release is tagged `v0.5.0` on the Releases page, but the actual Docker
-image tag is `0.5.0` (no `v`) — set `WOWYRD_VERSION=0.5.0`, not `WOWYRD_VERSION=v0.5.0`, or the
+**Drop the leading `v`.** A release is tagged `v0.6.0` on the Releases page, but the actual Docker
+image tag is `0.6.0` (no `v`) — set `WOWYRD_VERSION=0.6.0`, not `WOWYRD_VERSION=v0.6.0`, or the
 pull will fail with "manifest unknown."
 
 ## Safety defaults
@@ -103,7 +109,7 @@ enforcement, and only change this setting deliberately, after that review.
 To install the engine, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
 (`docker-compose.yml`: PostgreSQL + Redis), because the champion-challenger comparison and the
 full detection need it. `INSTALL.md` also covers verifying image signatures
-(`cosign verify`) before you pull. `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
+(`cosign verify`) before you pull. `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
 
 `docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look. Its
 detection is not the same as Full, so it is not a pilot profile. `INSTALL.md` lists every feature

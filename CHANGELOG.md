@@ -10,7 +10,103 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-No changes since `v0.5.0`.
+No changes since `v0.6.0`.
+
+## v0.6.0 — 2026-11-16
+
+> **Signed, multi-arch.** `v0.6.0` images are cosign-signed and built for `linux/amd64` and
+> `linux/arm64`. See `INSTALL.md`, step 3.
+
+### Known issues
+
+- Known issue: the optional network sensor can mis-attribute requests that arrive through your own load balancer without a client-IP header. A fix ships in the next release. The rule review and the reference set are not affected.
+
+### What's new
+
+- **The rule review runs alone.** It is one container image with the rule review and Python
+  only: no engine, no sensor, no database. You get it as a signed file, one archive per platform,
+  not from a public registry. You check every signature with no network before you load it. It
+  runs with no network, a read-only file system and a non-root user. It refuses to run as root
+  and refuses options that call a language model. Docker works, and so does rootless Podman with
+  SELinux enforcing (tested on AlmaLinux 9.8 and 8.10). The steps are in
+  [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md). It is tested with cosign 2.6.1.
+- **Licence of the rule-review image.** The image label is `LicenseRef-WoWyrd-Proprietary`. The
+  image holds the licence text in `/licenses/LICENSE`. Your signed agreement with WoWyrd holds
+  the full terms.
+- **Comparison with our reference rule set.** The reports compare your rules with our reference
+  set: the 79 rules of our engine, in ten groups. For each pattern they say "matched", "partly"
+  or "no equivalent rule found", with a plain reason, and whether your transactions file has the
+  data the pattern needs. Patterns that need network data are shown apart. It is on when you give
+  a rule catalogue or a rule file. `--no-reference-set` turns it off. You can give your own
+  mapping with `--reference-map`. Each run writes a draft of that file for your analyst. Nothing
+  new goes into the summary file.
+- **Monthly update of the reference set.** Each release signs our reference set as one data file.
+  `--reference-bundle FILE` checks its signature with no network before any of your files is
+  read. A failed check stops the run. `--check-reference-bundle FILE` only checks it. A new report
+  section lists what is new in the reference set since your last report.
+- **No change to the app, the dashboard or the sensor.** Their product code is the same as in
+  `v0.5.0`; only test code changed. The images are rebuilt for this release. The API, the rule
+  pack (79 rules) and the database are the same as in `v0.5.0`.
+
+### Changed
+
+- The rule review uses one keyword matcher for the whole report. A keyword now matches at the
+  start of a word, and a short keyword only as a whole word. "Coverage by fraud type" also reads
+  the catalogue's optional `description` and `fraud_type` columns. So a real catalogue can show a
+  different "Coverage by fraud type", and a different number of "add a missing fraud type"
+  proposals, than `v0.5.0`.
+
+### Breaking changes
+
+None from `v0.5.0`. If you upgrade from `v0.3.10` or older, the `v0.4.0` breaking changes apply:
+amounts are `{minor_units, currency}` objects. See the `v0.4.0` section below.
+
+### Upgrade safety
+
+- From `v0.5.0` or `v0.4.0`: no new database migration.
+- From `v0.3.10` or older: follow "Upgrade safety" and "Migration steps" of `v0.4.0` below.
+- Migrations only go forward. To roll back, restore the backup that you made before the upgrade
+  (see `OPERATIONS.md`).
+
+### Migration steps
+
+1. From `v0.3.10` or older: first do the `v0.4.0` migration steps (change your integration to the
+   new amount format).
+2. Optional: verify the images (`INSTALL.md`, step 3).
+3. Follow "Upgrade" in `OPERATIONS.md`: back up, set `WOWYRD_VERSION=0.6.0`, pull, start.
+4. Check `GET /health`.
+
+The Compose files and `.env.example` do not change in this release.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.6.0`, `ghcr.io/chavychaze/wowyrd-dashboard:0.6.0` (no
+leading `v` on the image tag). See `INSTALL.md` for the full install. The sensor-host image
+`ghcr.io/chavychaze/wowyrd-sensor:0.6.0` is used only with a sensor on another host. The
+rule-review image is not on this page: it comes as a signed file (see
+[`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md)).
+
+Image digests (multi-arch index; each covers `linux/amd64` and `linux/arm64`):
+
+- `ghcr.io/chavychaze/wowyrd-app:0.6.0` — `sha256:76bf73b07cea7a4ed584d5568023ac234301eb3d3fe2b1b46d6783ad552fb077`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.6.0` — `sha256:690c13150aa20e53189edb896cf75413f18e32374b3558c38cdf479a0d0957c8`
+- `ghcr.io/chavychaze/wowyrd-sensor:0.6.0` — `sha256:aa825b5a8c05c412d76d38b74e01c7f4cde779ec7716da66a9b240e8525a3af9`
+
+Platform digests of `wowyrd-app:0.6.0`: `linux/amd64`
+`sha256:8df80ac5a7581ee8e2f688aa76815f80f9f16f15b30b95fc9cc32942ebae5586`, `linux/arm64`
+`sha256:b75cbd89c08872a8a6107cfe702e79a163b6c1d08a300f10dc96b4341c1cea57`.
+
+The images are cosign-signed (keyless) by the release workflow of tag `v0.6.0`. `INSTALL.md`,
+step 3, has the verification command. Each index also lists two build attestation entries
+(platform `unknown/unknown`). Docker does not run them.
+
+Changes to this repository's own files in this release:
+
+- New `INSTALL_RULE_REVIEW_ONLY.md`: install and run the rule review alone.
+- `README.md`: it now leads with the rule review and says that the engine and the sensor are not
+  offered now (already published after `v0.5.0`). It links the new guide.
+- `INSTALL.md`: a link to the new guide, and the cosign versions in step 3.
+- `INSTALL.md`, `README.md`, `OPERATIONS.md`, `NETWORK.md`: version `0.6.0` in the examples.
 
 ## v0.5.0 — 2026-11-15
 
