@@ -58,7 +58,8 @@ files, so a changed hand-off could change it too.
    `verify-blob --new-bundle-format --offline`. cosign 3.1.3 still accepts both flags, but marks them deprecated. We
    have not run the full check with cosign 3. Get cosign from a source your team already trusts, for example
    Sigstore's own release page and its published checksums.
-2. Docker, or Podman. On RHEL 8 and RHEL 9, rootless Podman with SELinux enforcing works (step 6).
+2. Docker, or Podman. Rootless Podman with SELinux enforcing is tested on AlmaLinux 9.8 and 8.10, rebuilds of
+   RHEL 9 and RHEL 8 (2026-11-16, step 6).
 3. `bash`, `grep`, `mktemp` and `sha256sum`. On macOS, `shasum -a 256` does the same job. The script uses it when
    `sha256sum` is missing.
 

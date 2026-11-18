@@ -12,6 +12,8 @@ steps" and "Installing this version".
 
 - `SECURITY.md`: the scope now includes the rule-review image (`v0.6.0` or later) and the
   `wowyrd-sensor` image. The reporting route and the response targets are the same.
+- `INSTALL_RULE_REVIEW_ONLY.md`: the "Tools you need" list now names the systems that were tested with
+  rootless Podman (AlmaLinux 9.8 and 8.10). It no longer says that RHEL 8 and RHEL 9 work.
 
 ## v0.6.0 — 2026-11-16
 
