@@ -10,7 +10,8 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-No changes since `v0.6.0`.
+- `SECURITY.md`: the scope now includes the rule-review image (`v0.6.0` or later). The
+  reporting route and the response targets are the same.
 
 ## v0.6.0 — 2026-11-16
 

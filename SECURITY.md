@@ -14,7 +14,8 @@ flowchart TD
 1. Email **security@wowyrd.net**. Start the subject with `Security:`.
 2. Do not open a public GitHub issue for a vulnerability.
 3. Include:
-   - the WoWyrd version (`WOWYRD_VERSION`);
+   - the WoWyrd version (`WOWYRD_VERSION`, or for the rule-review image the release version
+     `V`, for example `0.6.0`);
    - the steps to reproduce the problem;
    - what an attacker can do with it;
    - your name or handle, if you want credit.
@@ -34,6 +35,8 @@ agree with you on the fix and on when the issue becomes public.
 ## Scope
 
 - The `wowyrd-app` and `wowyrd-dashboard` images on `ghcr.io/chavychaze`.
+- The rule-review image (`v0.6.0` or later), which you receive as a signed file. See
+  [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md).
 - The Compose files and the documentation in this repository.
 
 Report a vulnerability in PostgreSQL, Redis or Docker to that project directly.
