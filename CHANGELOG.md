@@ -10,8 +10,8 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-- `SECURITY.md`: the scope now includes the rule-review image (`v0.6.0` or later). The
-  reporting route and the response targets are the same.
+- `SECURITY.md`: the scope now includes the rule-review image (`v0.6.0` or later) and the
+  `wowyrd-sensor` image. The reporting route and the response targets are the same.
 
 ## v0.6.0 — 2026-11-16
 
