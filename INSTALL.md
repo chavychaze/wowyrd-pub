@@ -20,7 +20,7 @@ defers to this file. This file is the source of truth.
 | Use it for | A pilot on your own data | A quick look only |
 | Containers | 4: `wowyrd-app`, `wowyrd-dashboard`, `wowyrd-postgres`, `wowyrd-redis` | 2: `wowyrd-app`, `wowyrd-dashboard` |
 | Transaction evaluation, case queue | Yes | Yes |
-| Rule pack loaded | 79 rules in `v0.6.0`, `v0.5.0` and `v0.4.0`, 47 in `v0.3.10` and `v0.3.9` (2 of them need the optional network sensor, see `CHANGELOG.md`), 47 in `v0.3.6` (2 of them cannot fire), 41 in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
+| Rule pack loaded | 79 rules in `v0.7.0`, `v0.6.0`, `v0.5.0` and `v0.4.0`, 47 in `v0.3.10` and `v0.3.9` (2 of them need the optional network sensor, see `CHANGELOG.md`), 47 in `v0.3.6` (2 of them cannot fire), 41 in `v0.3.5`, 38 in `v0.3.4` | Same as Full |
 | Detection | All loaded rules can fire (the 2 XDP rules only with the network sensor) | Not the same as Full (see below) |
 | Retro-analysis report page | Yes | Yes from `v0.3.6`. Not available in `v0.3.5` |
 | Evidence report (`/v1/reports/evidence`) | Yes | Yes from `v0.3.9`. Not available in `v0.3.6` and `v0.3.5` |
@@ -45,7 +45,7 @@ the same rule pack is loaded. Step 7 covers the Lite profile.
 flowchart TD
     A[Get a read:packages token from your WoWyrd contact] --> B[docker login ghcr.io]
     B --> C{Version to install}
-    C -->|0.6.0, 0.5.0, 0.4.0, 0.3.10, 0.3.9, 0.3.6 or 0.3.4| D[cosign verify both images]
+    C -->|0.7.0, 0.6.0, 0.5.0, 0.4.0, 0.3.10, 0.3.9, 0.3.6 or 0.3.4| D[cosign verify both images]
     C -->|0.3.5| E[Compare digests with the Releases page]
     D --> F[cp .env.example .env<br/>set WOWYRD_VERSION, POSTGRES_PASSWORD,<br/>API_KEYS, RETENTION_HASH_KEY]
     E --> F
@@ -114,7 +114,7 @@ On a machine with registry access (log in as above first, and do step 3 there):
 1. Pull the four images for the platform of the target host (`linux/amd64` or `linux/arm64`):
    ```bash
    export DOCKER_DEFAULT_PLATFORM=linux/amd64   # the target host's platform
-   V=0.6.0
+   V=0.7.0
    docker pull ghcr.io/chavychaze/wowyrd-app:$V
    docker pull ghcr.io/chavychaze/wowyrd-dashboard:$V
    docker pull postgres:15-alpine
@@ -160,14 +160,14 @@ an arm64 host, set `DOCKER_DEFAULT_PLATFORM=linux/amd64` first.
 
 ```mermaid
 flowchart TD
-    A{Version} -->|0.6.0, 0.5.0, 0.4.0, 0.3.10, 0.3.9, 0.3.6 or 0.3.4| B[cosign verify both images]
+    A{Version} -->|0.7.0, 0.6.0, 0.5.0, 0.4.0, 0.3.10, 0.3.9, 0.3.6 or 0.3.4| B[cosign verify both images]
     A -->|0.3.5| C[Compare digests with the Releases page]
     B --> D{Result}
     D -->|Verification passes| E[Pull by the same tag]
     D -->|Verification fails| F[Do not install.<br/>Contact WoWyrd]
 ```
 
-`v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/). The
+`v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed with [cosign](https://docs.sigstore.dev/cosign/signing/overview/). The
 signature comes from the WoWyrd release workflow on GitHub Actions (keyless signing, with
 Sigstore's public Fulcio and Rekor services). No signing key is stored, so no key can leak.
 
@@ -177,11 +177,16 @@ about the images' integrity either way. Compare the image digests on the `v0.3.5
 entry instead. Releases before `v0.3.4` are unsigned too.
 
 1. Install cosign ([instructions](https://docs.sigstore.dev/cosign/system_config/installation/)).
-   The release workflow signs with cosign 2.6.1. The rule-review guide is tested with cosign
-   2.6.1. We ran the command below on the `v0.6.0` images with cosign 3.1.3.
+   Which cosign version to use:
+   - `v0.7.0` or later: cosign 3.1.4 or newer. From `v0.7.0`, the release workflow signs with
+     cosign 3.1.4. cosign 2.x cannot verify these image signatures (tested 2026-11-18). Use
+     3.1.4 or newer. We ran the command below on the `v0.7.0` images with cosign 3.1.3.
+   - `v0.6.0` or older: cosign 2.6.1. Those releases were signed with cosign 2.6.1. We ran
+     the command below on the `v0.6.0` images with cosign 3.1.3 too.
+   The rule-review guide names its own tested cosign version.
 2. Verify both images. Set `V` to the version that you install:
    ```bash
-   V=0.6.0
+   V=0.7.0
    for IMAGE in wowyrd-app wowyrd-dashboard; do
      cosign verify \
        --certificate-identity-regexp "^https://github.com/chavychaze/.*$" \
@@ -203,7 +208,7 @@ sensor-host image `wowyrd-sensor` (used only with a sensor on another host).
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.6.0 (drop the leading "v" — see README.md's
+# edit .env: set WOWYRD_VERSION=0.7.0 (drop the leading "v" — see README.md's
 # "Versions" section), POSTGRES_PASSWORD, API_KEYS, DASHBOARD_API_KEYS (see "Limit who can open
 # the dashboard and the API" below) and RETENTION_HASH_KEY (see "Personal data anonymization").
 # On an internet-facing host, also add POSTGRES_BIND=127.0.0.1 and REDIS_BIND=127.0.0.1, so the
@@ -379,7 +384,7 @@ the features marked "Not available" in "Which profile to use" above. So it is no
 
 ```bash
 cp .env.example .env
-# edit .env: set WOWYRD_VERSION=0.6.0, API_KEYS, DASHBOARD_API_KEYS, and POSTGRES_PASSWORD to any placeholder value
+# edit .env: set WOWYRD_VERSION=0.7.0, API_KEYS, DASHBOARD_API_KEYS, and POSTGRES_PASSWORD to any placeholder value
 # (this profile never connects to Postgres, but Compose still validates the variable exists —
 # see docker-compose.lite.yml's own comment on why).
 

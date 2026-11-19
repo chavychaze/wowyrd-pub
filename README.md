@@ -6,8 +6,9 @@ The rule review of your own fraud and AML rules is delivered during a pilot, ins
 More about WoWyrd: https://wowyrd.net.
 
 From `v0.6.0`, the rule review also runs alone, as one signed container image with no engine, no
-sensor and no database: see [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md). It is
-tested with cosign 2.6.1.
+sensor and no database: see [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md). Use
+cosign 3.1.4 or newer for `v0.7.0` or later, and cosign 2.6.1 for `v0.6.0`. Rootless Podman with
+SELinux enforcing is tested on RHEL 9.9 (2026-11-18, v0.6.0).
 
 ## About this repository
 
@@ -94,8 +95,8 @@ Explicit versioning only — there is no `latest` tag. Check this repository's R
 the current version, then pin `WOWYRD_VERSION` in `.env` to it and change it deliberately, not
 automatically, when you're ready to upgrade.
 
-**Drop the leading `v`.** A release is tagged `v0.6.0` on the Releases page, but the actual Docker
-image tag is `0.6.0` (no `v`) — set `WOWYRD_VERSION=0.6.0`, not `WOWYRD_VERSION=v0.6.0`, or the
+**Drop the leading `v`.** A release is tagged `v0.7.0` on the Releases page, but the actual Docker
+image tag is `0.7.0` (no `v`) — set `WOWYRD_VERSION=0.7.0`, not `WOWYRD_VERSION=v0.7.0`, or the
 pull will fail with "manifest unknown."
 
 ## Safety defaults
@@ -109,7 +110,7 @@ enforcement, and only change this setting deliberately, after that review.
 To install the engine, follow [`INSTALL.md`](INSTALL.md). It uses the Full profile
 (`docker-compose.yml`: PostgreSQL + Redis), because the champion-challenger comparison and the
 full detection need it. `INSTALL.md` also covers verifying image signatures
-(`cosign verify`) before you pull. `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
+(`cosign verify`) before you pull. `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.10`, `v0.3.9`, `v0.3.6` and `v0.3.4` are signed; `v0.3.5` is not.
 
 `docker-compose.lite.yml` (embedded SQLite, no separate database) is for a quick look. Its
 detection is not the same as Full, so it is not a pilot profile. `INSTALL.md` lists every feature

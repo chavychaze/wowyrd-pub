@@ -54,12 +54,18 @@ files, so a changed hand-off could change it too.
 
 ## Tools you need
 
-1. `cosign`. We test with version 2.6.1, the version our release job uses. A newer version must still accept
-   `verify-blob --new-bundle-format --offline`. cosign 3.1.3 still accepts both flags, but marks them deprecated. We
-   have not run the full check with cosign 3. Get cosign from a source your team already trusts, for example
-   Sigstore's own release page and its published checksums.
-2. Docker, or Podman. Rootless Podman with SELinux enforcing is tested on AlmaLinux 9.8 and 8.10, rebuilds of
-   RHEL 9 and RHEL 8 (2026-11-16, step 6).
+1. `cosign`. v0.7.0 or later: cosign 3.1.4 or newer; v0.6.0 and older: cosign 2.6.1.
+   Our release job signs v0.7.0 and later with cosign 3.1.4.
+   Tested 2026-11-18 (release dry run): files signed with cosign 3.1.4 verify with cosign 2.6.1 and 3.1.3; image
+   signatures made with 3.1.4 verify with 3.1.3, and cosign 2.6.1 reports "no signatures found". Use 3.1.4 or newer.
+   Files signed with cosign 2.6.1 also verify with cosign 2.6.1, 3.1.3 and 3.1.4. The check uses
+   `verify-blob --new-bundle-format --offline`, with the same flags for every version. cosign 3 prints a
+   deprecation warning for `--new-bundle-format` (and for `--offline`).
+   The warning is harmless: the check still passes.
+   Get cosign from a source your team already trusts, for example Sigstore's own release page and its published
+   checksums.
+2. Docker, or Podman. Rootless Podman with SELinux enforcing is tested on RHEL 9.9 (2026-11-18, v0.6.0), and on
+   AlmaLinux 9.8 and 8.10 (step 6).
 3. `bash`, `grep`, `mktemp` and `sha256sum`. On macOS, `shasum -a 256` does the same job. The script uses it when
    `sha256sum` is missing.
 
@@ -97,8 +103,8 @@ checks its location and that it is not the shipped copy. It cannot prove where t
 
 1. On a machine with internet, run `cosign initialize`. Use the cosign from "Tools you need". It fetches the root from
    Sigstore's own repository and checks it.
-2. cosign 2.6.1 writes the file to `~/.sigstore/root/tuf-repo-cdn.sigstore.dev/targets/trusted_root.json` (we checked
-   this on Linux, and cosign 3.1.3 on macOS uses the same path). On the host, keep the file at that path, or set
+2. cosign writes the file to `~/.sigstore/root/tuf-repo-cdn.sigstore.dev/targets/trusted_root.json` (we checked
+   cosign 2.6.1 on Linux and cosign 3.1.3 on macOS: the same path). On the host, keep the file at that path, or set
    `ROOT` to where you put it. The file must be outside the hand-off folder.
 3. In step 3, set `ROOT_FROM_OWN_INIT=1`. Without `ROOT`, the script reads the path of item 2 under your `HOME`.
 4. The script stops if `ROOT` is inside the hand-off folder, is a symbolic link, or has a shipped copy's file name.
@@ -258,6 +264,9 @@ fi
 verify "$DIGESTS" || stop "the digests file does not verify"
 SIGNED="$(cat "$W/$DIGESTS")"
 listed "version: $V" || stop "the digests file is not for version $V"
+# The index digest from the checked copy, for a check by digest (a registry pull, or the x86 release check).
+INDEX_LINE="$(grep -E '^index_digest: sha256:[0-9a-f]{64}$' <<< "$SIGNED" || true)"
+case "$INDEX_LINE" in ""|*$'\n'*) ;; *) echo "Index digest: ${INDEX_LINE#index_digest: }" ;; esac
 if [ -n "$REVISION" ]; then
   listed "revision: $REVISION" || stop "the digests file does not name revision $REVISION"
   echo "Revision: the signed digests file names commit $REVISION."
@@ -307,7 +316,8 @@ The script does these checks, in this order. It stops at the first failure:
 2. The private copy of every file. A missing file is a stop.
 3. The trusted root: the script prints its SHA-256. With `ROOT_SHA256`, the two values must be equal. With
    `ROOT_FROM_OWN_INIT=1`, the value must differ from every shipped copy in the hand-off folder.
-4. The digests file: its signature (offline, the exact signer), then its version. With `REVISION`, its revision too.
+4. The digests file: its signature (offline, the exact signer), then its version. The script prints the signed
+   index digest (`Index digest: sha256:...`); a pull by digest uses this value. With `REVISION`, its revision too.
 5. The archive for your platform: its signature, its name, and its SHA-256 in the signed digests file.
 6. The SBOM for your platform: its signature, and its SHA-256 in the signed digests file.
 7. Only now: `docker load` or `podman load`, of the private copy.
@@ -329,8 +339,9 @@ docker image inspect -f '{{ index .Config.Labels "org.opencontainers.image.licen
 CID="$(docker create "$IMG")" && docker cp "$CID:/licenses/LICENSE" ./wowyrd-rule-review-LICENSE; docker rm "$CID"
 ```
 
-> **Tested with Podman (2026-11-16).** AlmaLinux 9.8 with Podman 5.8.2 and AlmaLinux 8.10 with Podman 4.9.4
-> (`4.9.4-rhel`). Both are rebuilds of RHEL 9 and RHEL 8; Red Hat Enterprise Linux itself was not tested. Each run used
+> **Tested with Podman.** Tested on RHEL 9.9 (2026-11-18, v0.6.0) with Podman 5.8.5. Earlier, on 2026-11-16:
+> AlmaLinux 9.8 with Podman 5.8.2 and AlmaLinux 8.10 with Podman 4.9.4 (`4.9.4-rhel`), rebuilds of RHEL 9 and
+> RHEL 8. RHEL 8 itself was not tested. Each run used
 > a fresh VM, an unprivileged user, rootless Podman, and SELinux in enforcing mode. The archive was a `docker save`
 > archive, compressed with `gzip -n -9`, the same way the release job makes it. Results, the same on both:
 >
@@ -344,7 +355,8 @@ CID="$(docker create "$IMG")" && docker cp "$CID:/licenses/LICENSE" ./wowyrd-rul
 >
 > Do not run `localhost/wowyrd-rule-review:$V`. That name does not exist, so Podman tries to pull it from a registry
 > (exit 125). Run by `IMG`. In this test, a test stand-in replaced cosign: it checked the arguments only. The
-> release job checks the real signatures. arm64 hosts were not tested.
+> release job checks the real signatures. The RHEL 9.9 run used the real release files and the real cosign 2.6.1: a
+> changed archive stopped the script before the load. arm64 hosts were not tested.
 
 ## 4. Put it in your own registry (optional)
 
@@ -426,6 +438,10 @@ file. Every other command mounts `in` read-only.
 
 ## 6. Run the review
 
+The first time, leave out the line `--previous /work/previous`. From the second period on, copy the last period's
+`out` into `previous` and keep the line. (On a first run, with `previous` empty and no token key yet, the command as
+written stops with exit 2: `--previous: the token key ... is missing`. Seen on RHEL 9.9, 2026-11-18.)
+
 Docker:
 
 ```sh
@@ -465,14 +481,16 @@ podman run --rm \
   --previous /work/previous --out /work/out
 ```
 
-> **Tested (2026-11-16)** with the command above, as written, run by `IMG` after the step 3 script:
+> **Tested** with the command above, as written, run by `IMG` after the step 3 script (AlmaLinux 2026-11-16;
+> RHEL 9.9 2026-11-18, v0.6.0):
 >
 > | OS | Kernel | Podman | Runtime, cgroup | SELinux |
 > |---|---|---|---|---|
 > | AlmaLinux 9.8 | `5.14.0-687.66.2.el9_8` | 5.8.2 | crun 1.27, cgroup v2 | enforcing, container-selinux 2.247.0 |
 > | AlmaLinux 8.10 | `4.18.0-553.178.1.el8_10` | 4.9.4 (`4.9.4-rhel`) | runc 1.2.9, cgroup v1 | enforcing, container-selinux 2.229.0 |
+> | RHEL 9.9 | `5.14.0-741.22.1.el9_9` | 5.8.5 | crun 1.29.1, cgroup v2 | enforcing, container-selinux 2.250.0 |
 >
-> On both, as an unprivileged user with rootless Podman:
+> On each, as an unprivileged user with rootless Podman:
 >
 > 1. Two runs, one month apart, the second with `--previous`: both exit 0.
 > 2. Every output file and the token key belong to the host user.
@@ -482,6 +500,10 @@ podman run --rm \
 >    container (`container_t`) may not read a file in your home folder (`user_home_t`).
 > 6. Without `--userns=keep-id`: exit 2, `/work/out.key/token-key: Permission denied`. The container user maps to a
 >    sub-UID that cannot open your `out.key` folder (mode 700).
+>
+> On RHEL 9.9, items 1 to 3 were checked by the smoke script (the first month without `--previous`), plus: no
+> network interface but `lo`, no DNS and no connection from inside the container, and the image refused UID 0
+> (exit 2). Items 4 to 6 were checked on AlmaLinux only.
 
 Why each flag:
 
@@ -525,6 +547,211 @@ cosign verify-blob --new-bundle-format --offline --trusted-root "$ROOT" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   "reference-bundle-v$V.json"
 ```
+
+## 8. Scheduled rule health (optional)
+
+Continuous rule health runs the same verified image on your scheduler: `health.py measure` after your export, and
+`health.py tick` every hour for reminders. It keeps its tasks in a local store and writes reminders to a local
+outbox. It sends nothing. The operator contract: the chain head is kept outside the store, the exit codes are below,
+and the image is pinned by ID.
+
+```mermaid
+flowchart LR
+  V["step 3: bank-verify.sh<br/>prints IMG=sha256:..."] --> T["templates from the image<br/>(docker create + docker cp)"]
+  T --> S["sha256:IMAGE_ID -> your IMG<br/>in the templates"]
+  S --> R["systemd timers or cron:<br/>docker run --pull never sha256:..."]
+  M["registry mirror only (step 4)"] -. "variant: REF=registry@sha256:..." .-> S
+```
+
+The diagram reads left to right. You pin the image ID that the step 3 script checked. The templates run that ID
+with `--pull never`, so Docker runs only the loaded image and never fetches another.
+
+1. Run step 3. Keep the image ID it prints: `Run it by this ID: IMG=sha256:...`.
+2. Copy the templates out of the image. `docker create` makes a container but starts nothing:
+
+   ```sh
+   CID="$(docker create "$IMG")"                                       # Podman: podman create
+   docker cp "$CID:/app/tools/rule-review-collector/schedule" ./rule-health-templates   # Podman: podman cp
+   docker rm "$CID"                                                    # Podman: podman rm
+   ```
+
+3. In each template, replace `sha256:IMAGE_ID` with your `IMG` value. The Docker templates are
+   `wowyrd-rule-health-measure.service` and `.timer`, `wowyrd-rule-health-tick.service` and `.timer`, and
+   `crontab.txt` (the cron fallback). The rootless Podman templates are below. `health.json` is the settings
+   template.
+4. Read the comments at the top of each template before you enable it. They say which folders to give to user
+   65532, that the docker group is root-equivalent, that the service account can read the token key, and how to
+   mount the settings read-only.
+5. Registry variant: if you mirror the image into your own registry (step 4), you can pin the registry digest
+   instead (`<registry path>@sha256:<64 hex>`, the `REF` the step 3 script checked). Pull it once on each run host.
+   The run flags stay the same, `--pull never` included.
+
+The run flags in the Docker templates are the step 6 flags, plus `--pull never`, `--pids-limit` and `--memory`. The
+container user is the image's own user 65532, not your user. A test (`test_bank_verify.py`,
+`ScheduleTemplateFlagsTest`) holds every template to the flags that `container/test_image.sh` runs.
+
+### Rootless Podman
+
+`health.py example podman` prints the same two runs for rootless Podman:
+`wowyrd-rule-health-measure-podman.service`, `wowyrd-rule-health-tick-podman.service` (systemd user units of the
+service account; the `.timer` files are the same) and `crontab-podman.txt`. They add `--userns=keep-id` and `:Z` on
+every mount to the Docker flags, and run as the service account itself, so no docker group is needed.
+
+1. As the service account, run the step 3 script with `ENGINE=podman`. The image goes into that account's own image
+   store. Replace `sha256:IMAGE_ID` with the ID the script printed.
+2. In the user units, replace `HEALTH_UID:HEALTH_GID` with the numbers `id -u` and `id -g` of the service account
+   print. The cron lines read them with `$(id -u):$(id -g)`.
+3. Install the units in `~/.config/systemd/user/` of the service account, under the Docker names (without
+   `-podman`). Run `loginctl enable-linger` for that account, then `systemctl --user enable --now` the two timers.
+4. `--memory` and `--pids-limit` need cgroup v2 with the memory and pids controllers delegated to the user.
+   `podman info` shows `cgroupVersion: v2`.
+
+WoWyrd's container test runs Docker. The Podman templates have the same flags as the Docker ones, checked by the same
+test, but no Podman run of them is part of the release check.
+
+### Exit codes of health.py
+
+| Exit | Meaning | What to do |
+|---|---|---|
+| 0 | Done. A `tick` that finds the store busy exits 0 too: it writes nothing and the next hour writes. | Nothing. |
+| 2 | Refused or failed: a failed run also opens a task; a refusal or an error after saving does not. A failed `measure` opens the task "the scheduled review did not complete". | Read the message in the scheduler's log. |
+| 3 | Done and recorded, but `outbox/heartbeat.json` could not be updated. | Check the disk. The next command writes the heartbeat again. |
+| 4 | `measure` was skipped: another command held the store for the whole wait. The heartbeat says `skipped: busy`. | Nothing was lost. Run it again, or wait for the next schedule. |
+
+A `tick` that finds the store busy exits 0 on purpose: it runs every hour, so the next one writes the reminders. A busy
+`measure` exits 4, because the next one may be a day or a week away. `health.py verify` exits 2 once after it rolled
+back an unfinished write (`health.db-journal`): the last command did not complete; find it and run it again.
+
+Your monitoring can read `outbox/heartbeat.json`: the time and result of the last measure and tick, and the chain
+head of the store. Note a chain head (`chain head: SEQ:MAC12`) somewhere outside this machine from time to time, and
+check it with `health.py verify --expect-head SEQ:MAC12`.
+
+## 9. Evidence pack for audit (optional)
+
+Your internal audit function, your external auditor, or an external expert may test your transaction monitoring.
+They need test evidence they can repeat. Add `--evidence-pack` to the run of step 6. The run then also writes two
+files into `out`:
+
+| File | What it is |
+|---|---|
+| `evidence-pack.html` | What the review measured and how, how to repeat the run, what the tool does not test, and a blank sign-off form |
+| `output-sha256.txt` | The SHA-256 of six files, in `sha256sum` format: `evidence-pack.html`, the three reports and the two summary files. It is written last |
+
+The page is evidence for the auditor's own testing. The auditor forms the opinion. WoWyrd gives no opinion on your
+controls and signs nothing. The sign-off page is a blank form for the auditor.
+
+The other reports say "Internal report. Do not share it outside your firm." Only the evidence pack goes to your
+auditor or the external expert you appoint.
+
+Fix the generation time, so that a repeat run gives the same bytes. Add `-e SOURCE_DATE_EPOCH=<seconds>` to the
+command of step 6, before `"$IMG"`. Use any fixed whole number of seconds since 1970-01-01 UTC. File the value and
+the re-run class the page states in your change record. Give `--cutoff` as usual. If you give none, the cut-off is the
+time the variable sets, so a repeat run gets the same cut-off. An old value with no `--cutoff` stops the run (exit 2)
+when a transaction is later than that time: the message says "the default cut-off is SOURCE_DATE_EPOCH; unset it or
+give --cutoff". Give `--cutoff`. Without the variable, the run prints a warning and goes on (re-run class B: the same
+numbers, not the same bytes).
+
+The page states one of three re-run classes:
+
+1. **Class A.** The signed image of a release, `SOURCE_DATE_EPOCH` set, and no `--pdf`. A repeat run gives byte-equal
+   files.
+2. **Class B.** The same numbers, not the same bytes. The generation time, the cut-off source line or the PDF links
+   differ. A run with `--pdf` is class B: its reports link to PDFs, and the image cannot print PDFs. To get class A,
+   run the evidence pack without `--pdf`.
+3. **Class C.** The run cannot be repeated from a signed release (for example, a run from a source checkout).
+
+With `--line`, each line's folder gets its own pair of files. The folder with the combined reports gets none.
+Options that call a language model cannot be used with `--evidence-pack`: the run stops with exit 2. The page's
+re-run command names each input by its file name. A single run reads every input from one folder, `in`. With `--line`,
+`in` is that line's own folder, and a file you give for all lines (for example `--rules`) goes in a second folder,
+`shared`, mounted read-only. Two different input files with the same name in one of these folders stop the run with
+exit 2. Rename one of them.
+
+How the auditor repeats the run:
+
+```mermaid
+flowchart TB
+  A["Auditor: own cosign initialize<br/>(trust anchor)"] --> S1
+  subgraph CL["Your host, your token key, no network"]
+    S1["1. bank-verify.sh: REF = the digest from<br/>your change record, REVISION = the commit<br/>on the page, ROOT_FROM_OWN_INIT=1"]
+    S1 -->|fail| X["stop: the auditor records an exception"]
+    S1 -->|pass| S2["2. sha256sum of each input file<br/>= the values on the page?"]
+    S2 -->|no| X
+    S2 -->|yes| S3["3. mkdir rerun (fails if it exists),<br/>then the recipe printed on the page into rerun"]
+    S3 -->|"mkdir fails, or the<br/>re-run exits non-zero"| X
+    S3 -->|exit 0| S4["4a. in out: sha256sum -c output-sha256.txt<br/>your files match your manifest"]
+    S4 --> S5["4b. cmp rerun/output-sha256.txt out/output-sha256.txt<br/>the re-run's manifest is byte-identical"]
+    S5 --> S6["4c. find out -type l<br/>no symbolic link in out"]
+  end
+  S6 --> SO["the auditor fills in the sign-off page"]
+  X --> SO
+```
+
+The diagram reads top to bottom. The auditor brings only a trust anchor. The repeat run takes place on your host,
+with your token key. The key, your files and the private output files never leave your host. The auditor runs the
+steps in order and stops at the first one that fails.
+
+The auditor takes `SOURCE_DATE_EPOCH` and the expected re-run class from your change record, not from the page. If
+the change record says `SOURCE_DATE_EPOCH` was set and the page states class B, that is an exception.
+
+1. Check the image by digest and commit. Use the script of step 3 with `REF` set to the digest in your change record
+   and `REVISION` set to the commit printed on the page. Set `V` and `ARCH` as in step 1: the script needs both. The
+   auditor may use its own trust anchor (`ROOT_FROM_OWN_INIT=1`). If you ran by image ID (step 3, no registry
+   `REF`), the auditor runs `bank-verify.sh` on the archive path of step 3 instead, without `REF`.
+2. Check the inputs. The SHA-256 of each file in `in` must equal the value in the page's run record.
+3. Run the recipe printed in section 2 of the page into a new folder, `rerun`. This guide holds no copy of the
+   command: the page prints the one for this run. The recipe starts with `mkdir rerun`. The folder `rerun` must be
+   new and empty before the re-run: `mkdir rerun` stops when it exists, so a folder made earlier (by anyone) cannot
+   stand in for the re-run. Making it first also matters for Docker: without it, Docker makes the folder as root and
+   the run cannot write into it. The re-run must exit 0. If `mkdir rerun` or the re-run fails, stop: do not run the
+   checks, and record an exception. The recipe uses the same image, inputs, cut-off and `SOURCE_DATE_EPOCH`. It must
+   use the same token key as your run, the key in `out.key`: a different key gives different bytes. The page prints a
+   Docker command and a rootless Podman command, with the flags of step 6.
+   With `--previous`, the re-run must read the same previous state as your run: the page's run record gives its
+   SHA-256. Re-run before you copy this run's `out` into `previous` for the next period. After that copy, the folder
+   holds this run's own state, and the re-run stops (exit 2): a previous state must have an earlier cut-off. If the
+   copy is already done, use the previous folder filed with your change record.
+4. Run the three checks from the folder that holds `in`, `out` and `rerun`. All must pass:
+
+```sh
+(cd out && sha256sum -c output-sha256.txt)
+cmp rerun/output-sha256.txt out/output-sha256.txt
+find out -type l
+```
+
+   On macOS, check (a) is this line instead:
+
+```sh
+(cd out && shasum -a 256 -c output-sha256.txt)
+```
+
+   - (a) checks that the files you delivered match your manifest. Every line must say `OK`.
+   - (b) checks that the auditor's re-run gives a manifest byte-identical to yours. `cmp` prints nothing and exits 0.
+     This also shows that your manifest lists exactly the six files: a deleted, added or recomputed line fails here.
+   - (c) lists every symbolic link in `out`. It must print nothing: a non-empty result is an exception.
+
+With `--line`, the commands name the line's folder: `out/lines/<folder>` and `rerun/lines/<folder>`. The page of each
+line prints its exact commands.
+
+The checks cover only the six files the manifest lists. They do not cover any other file in `out`: a symbolic link, a
+PDF, `client-rules-example.json`, the `.sha256` files of the summary or, with `--line`, the folder of the combined
+reports. The auditor reads only the six listed files.
+
+These checks hold for re-run class A only. In class B or C the files differ by design (the generation time, the
+cut-off source line or the PDF links), so there is no byte-level check: the auditor compares the numbers. Any other
+difference is an exception for the auditor to record.
+
+The auditor follows this step 9, a WoWyrd document, not the instructions printed on the page. A client who changes a
+page can change the instructions on it too.
+
+The manifest is not signed. You can change a page and compute the manifest again, so the manifest alone proves
+nothing. The checks are the match between your files and the auditor's own re-run. Never check `rerun` against the
+`output-sha256.txt` the re-run writes into `rerun`: that copy always matches its own folder.
+
+The manifest never lists the private files (`token-map.csv`, `btl-sample.csv`, `report-state.json`,
+`staff-token-map.csv`, `attestation-next.csv`, `reference-map-draft.csv`) or a PDF. If your run has SAR data (the
+`sar_counts.csv` file), `technical.html` and `management-extended.html` are local-only pages: the manifest names these
+two files by name and SHA-256 only, and their content stays on your host. The auditor reads them there.
 
 ## Exit codes
 

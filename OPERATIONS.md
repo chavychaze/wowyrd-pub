@@ -63,7 +63,7 @@ The app is stopped during the upgrade. Plan a maintenance window.
    tar -czf backup/config-$D.tgz .env config/
    ```
    `backup/` holds your secrets and your data. Store it as you store the database itself.
-4. Set the new version in `.env`, for example `WOWYRD_VERSION=0.6.0`.
+4. Set the new version in `.env`, for example `WOWYRD_VERSION=0.7.0`.
 5. Verify the new images, as in `INSTALL.md` step 3.
 6. Pull and start:
    ```bash

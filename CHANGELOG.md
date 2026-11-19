@@ -10,10 +10,149 @@ steps" and "Installing this version".
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.7.0 — 2026-11-18
+
+> **Signed, multi-arch.** `v0.7.0` images are cosign-signed and built for `linux/amd64` and
+> `linux/arm64`. From `v0.7.0`, use cosign 3.1.4 or newer. See `INSTALL.md`, step 3.
+
+### Known issues
+
+- Known issue: the optional network sensor can mis-attribute requests that arrive through your own load balancer without a client-IP header. A fix ships in a later release. The rule review and the reference set are not affected.
+
+### What's new
+
+The new parts of the rule review are optional. Each one measures your own records and gives no
+verdict. Without the new inputs, a report has the same parts as in `v0.6.0`.
+
+- **Alert investigation records** (`--case-log FILE`, with `--alerts`). The review checks the
+  shape of each investigation record in your case-log export: an alert with no event, no
+  decision, a decision with no recorded reason, an event with no actor, events out of order, and
+  an escalation that is not logged. The technical report also gives a 20-alert spot check.
+- **Incoming payments and money-mule signs.** With the optional direction, account, sender and
+  account-opened columns, the review measures incoming payments with our reference set's limits.
+  Account and sender IDs become tokens when they are read. No ID or token goes into a file.
+- **New accounts and the onboarding rating.** With the optional account-opened column and an
+  onboarding risk band, the review shows payments, alerts and fraud per account age band and per
+  onboarding band. It counts payments and reads no account or person column. `--onboarding-bands`
+  gives your band order, lowest risk first.
+- **From alert outcome to rule change.** With the optional `rule_feedback` column on `alerts.csv`,
+  the review measures how often an alert outcome leads to a change of that rule.
+  `--feedback-window-days N` sets the window (default 60 days).
+- **Your tools over time** (`--tools`). For each score-based or third-party tool in your tool
+  map, the technical report compares precision and catch rate in the latest periods with the
+  periods before.
+- **Time to change.** The follow-up report shows, for each earlier recommendation, the days until
+  your data shows the change, or how long it is still open. `--change-target-days N` sets your own
+  target; without it, the report sets none.
+- **Analyst capacity.** "Alert queue against analyst hours" uses minutes per outcome group, adds
+  the queue carried into each month, and names the months with no capacity data.
+- **Scheduled rule health** (`health.py`). It runs the review on your own schedule and turns a
+  drifting rule, or a failed or stale run, into a task for an owner group. It writes reminders to
+  a local outbox and sends nothing. See [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md),
+  step 8.
+- **Evidence pack** (`--evidence-pack`). The run also writes `evidence-pack.html` and
+  `output-sha256.txt`, for your internal audit function or an external expert to repeat the test.
+  WoWyrd gives no opinion on your controls. See
+  [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md), step 9.
+- **Reference set.** A new checklist item, UK-FCA-07: use what you learn at onboarding and in
+  ongoing monitoring to spot fraud, not transaction monitoring alone. The wording of UK-FCA-03 is
+  now "Understand, test and keep oversight of the score-based and third-party tools you use."
+- **Tested on RHEL 9.9.** The rule-review install is tested on RHEL 9.9 (2026-11-18, v0.6.0) with
+  rootless Podman 5.8.5 and SELinux enforcing, from the signed release files.
+- `bank-verify.sh` also prints the index digest from its checked copy of the signed digests file.
+
+### Security
+
+- The release job signs with cosign 3.1.4 (before: 2.6.1). The rule-review image carries cosign
+  3.1.4 too. The cosign 2.6.1 in the `v0.6.0` rule-review image has known Critical findings;
+  `v0.7.0` replaces it.
+- Use cosign 3.1.4 or newer for `v0.7.0` or later. cosign 2.6.1 cannot verify the `v0.7.0`
+  image signatures: it reports "no signatures found" (tested 2026-11-18). For the signed
+  rule-review files, cosign 2.6.1 and 3.1.3 both pass. For `v0.6.0` and older, use cosign 2.6.1.
+- Each release now scans the rule-review image for known vulnerabilities before it signs. A
+  Critical finding that is not on a reviewed list stops the release. The scan result comes with
+  the rule-review files.
+
+### Changed
+
+- Every page of the rule-review reports carries one handling line: "Internal report. Do not share
+  it outside your firm." The evidence pack keeps its own line.
+- When 1 to 4 closed alerts were escalated or had another outcome, the escalated count shows
+  "fewer than 5", also when it is 0. The management, extended and short reports do not show the outcome-check notes or per-outcome minutes. The technical report keeps
+  every exact count.
+- Without `--onboarding-bands`, the onboarding band table outside the technical report shows
+  "band 1", "band 2" and so on, not the values in your file.
+- The SAR line reads "Filings of suspicious activity reports to your financial intelligence unit
+  per 100 alerts".
+
+### Fixed
+
+- A score of `NaN` or `Infinity` in the rule-hit log no longer stops the threshold proposals.
+  Such a score is skipped, like a score that is not a number.
+- The optional network sensor no longer reads a client-IP header that is left over from an
+  earlier request.
+
+### Breaking changes
+
+- Rule review: an unreadable account-opened value (`account_created_at`, `account_opened_at`,
+  `account_open_date`, or an `account_age_days` / `account_age` that is not a whole number from 0
+  to 36,500) now stops any run whose transactions file has that column. The message names the
+  file, the row and the column, never the value. Fix the value or leave it empty.
+- None for the app and the dashboard.
+
+### Upgrade safety
+
+- From `v0.6.0`, `v0.5.0` or `v0.4.0`: no new database migration. The rule pack (79 rules) is the
+  same as in `v0.6.0`.
+- From `v0.3.10` or older: follow "Upgrade safety" and "Migration steps" of `v0.4.0` below.
+- Migrations only go forward. To roll back, restore the backup that you made before the upgrade
+  (see `OPERATIONS.md`).
+
+### Migration steps
+
+1. From `v0.3.10` or older: first do the `v0.4.0` migration steps.
+2. Install cosign 3.1.4 or newer. Optional: verify the images (`INSTALL.md`, step 3).
+3. Follow "Upgrade" in `OPERATIONS.md`: back up, set `WOWYRD_VERSION=0.7.0`, pull, start.
+4. Check `GET /health`.
+
+The Compose files and `.env.example` do not change in this release.
+
+### Installing this version
+
+Images: `ghcr.io/chavychaze/wowyrd-app:0.7.0`, `ghcr.io/chavychaze/wowyrd-dashboard:0.7.0` (no
+leading `v` on the image tag). See `INSTALL.md` for the full install. The sensor-host image
+`ghcr.io/chavychaze/wowyrd-sensor:0.7.0` is used only with a sensor on another host. The
+rule-review image is not on this page: it comes as a signed file (see
+[`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md)).
+
+Image digests (multi-arch index; each covers `linux/amd64` and `linux/arm64`):
+
+- `ghcr.io/chavychaze/wowyrd-app:0.7.0` — `sha256:eec38303bc2eb8380bf61edc552f43d4838204d20302f653e6def5a525e0e42f`
+- `ghcr.io/chavychaze/wowyrd-dashboard:0.7.0` — `sha256:3e29b492599c7f5eb1b4e7f13704f0896ba3eac81b2b6dadb0ee7281b72d18d8`
+- `ghcr.io/chavychaze/wowyrd-sensor:0.7.0` — `sha256:3af3406d85ad4ea805ca28171e6e1940470f6ffd170f5e669527d883df3b588a`
+
+Platform digests of `wowyrd-app:0.7.0`: `linux/amd64`
+`sha256:a9ac7091b280dd2e27cb8f813c9c4b596caded2984f0c3f3b3b4716121d0febb`, `linux/arm64`
+`sha256:61c8f5fafbea86ac0af5b69df9d2614fdbfadaa2e6c9accd7bf562a34ba926a5`.
+
+The images are cosign-signed (keyless) by the release workflow of tag `v0.7.0`. `INSTALL.md`,
+step 3, has the verification command. Each index also lists two build attestation entries
+(platform `unknown/unknown`). Docker does not run them.
+
+Changes to this repository's own files in this release:
+
+- `INSTALL_RULE_REVIEW_ONLY.md`: the `v0.7.0` guide. New: the cosign version rule, the RHEL 9.9
+  test, the first run without `--previous` (step 6), scheduled rule health (step 8) and the
+  evidence pack (step 9).
+- `INSTALL.md`: the cosign version to use, per release (step 3).
+- `README.md`: the cosign version rule and the RHEL 9.9 test.
+- `INSTALL.md`, `README.md`, `OPERATIONS.md`, `NETWORK.md`: version `0.7.0` in the examples.
 - `SECURITY.md`: the scope now includes the rule-review image (`v0.6.0` or later) and the
-  `wowyrd-sensor` image. The reporting route and the response targets are the same.
-- `INSTALL_RULE_REVIEW_ONLY.md`: the "Tools you need" list now names the systems that were tested with
-  rootless Podman (AlmaLinux 9.8 and 8.10). It no longer says that RHEL 8 and RHEL 9 work.
+  `wowyrd-sensor` image (already published after `v0.6.0`).
+- `INSTALL_RULE_REVIEW_ONLY.md`: the "Tools you need" list no longer said that RHEL 8 and RHEL 9
+  work before they were tested (already published after `v0.6.0`).
 
 ## v0.6.0 — 2026-11-16
 
