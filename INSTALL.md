@@ -13,6 +13,14 @@ defers to this file. This file is the source of truth.
 > [`INSTALL_RULE_REVIEW_ONLY.md`](INSTALL_RULE_REVIEW_ONLY.md). The engine and the sensor that
 > this file installs are not offered now.
 
+> **Engine images (`wowyrd-app`, `wowyrd-sensor`, `wowyrd-dashboard`): not offered since
+> 2026-11-13.** The last published version is `0.7.0`. Its signatures stay verifiable as described
+> in step 3.
+>
+> **Known issue.** The `v0.6.0` sensor known issue (requests that arrive through your own load
+> balancer without a client-IP header can be mis-attributed) stays open in `0.7.0`. No further
+> engine release is planned.
+
 ## Which profile to use
 
 | | Full (PostgreSQL + Redis) | Lite (embedded SQLite) |

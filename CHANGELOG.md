@@ -10,7 +10,10 @@ steps" and "Installing this version".
 
 ## Unreleased
 
-Nothing yet.
+- `INSTALL.md`: the engine images (`wowyrd-app`, `wowyrd-sensor`, `wowyrd-dashboard`) are not
+  offered since 2026-11-13. `0.7.0` is the last published version, and its signatures stay
+  verifiable. The `v0.6.0` sensor known issue stays open in `0.7.0`. No further engine release is
+  planned.
 
 ## v0.7.0 — 2026-11-18
 
